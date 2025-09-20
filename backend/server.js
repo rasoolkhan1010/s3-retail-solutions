@@ -6,7 +6,7 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://iasr-s3-3-front-end.onrender.com";
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://s3-retail-solutions.onrender.com";
 const DATABASE_URL =
   process.env.DATABASE_URL ||
   "postgresql://admin:ZSYVyCmQynPYV8NJWBCLVea3YxkW630y@dpg-d3182cbuibrs73aajh5g-a/inventory_db_4al1";
