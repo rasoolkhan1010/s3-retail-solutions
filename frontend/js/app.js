@@ -2,7 +2,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   // Base API URL from global config (set in index.html). Fallback is the deployed backend.
-  const API_BASE = (window.CONFIG && window.CONFIG.API_BASE) || "https://iasr-s3-2.onrender.com";
+  const API_BASE = (window.CONFIG && window.CONFIG.API_BASE) || "https://s3-retail-solutions-backend.onrender.com";
 
   // --- 1. Security & Session Data ---
   const userRole = sessionStorage.getItem("userRole");
@@ -400,3 +400,4 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 12. Initialize pagination view ---
   fetchDataForRange();
 });
+
