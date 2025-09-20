@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Single source of truth for backend URL (set in index.html)
-  const API_BASE = (window.CONFIG && window.CONFIG.API_BASE) || "https://iasr-s3-2.onrender.com";
+  const API_BASE = (window.CONFIG && window.CONFIG.API_BASE) || "https://s3-retail-solutions-backend.onrender.com";
 
   const usernameInput = document.getElementById("username");
   const passwordInput = document.getElementById("password");
