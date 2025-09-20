@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - S3 Retail Solutions</title>
+    <link href="dist/output.css" rel="stylesheet">
+
+
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-md">
+        <form id="login-form" class="bg-white shadow-xl rounded-2xl px-6 sm:px-8 pt-8 sm:pt-10 pb-6 sm:pb-8 mb-4">
+            <!-- Header -->
+            <div class="text-center mb-8 sm:mb-10">
+                <img src="Logo.jpeg" alt="S3 Retail Solutions Logo" class="mx-auto mb-3 sm:mb-4 w-24 sm:w-32 h-auto" />
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-800">Welcome</h2>
+                <p class="text-gray-500 mt-2 text-sm sm:text-base">Please login to access your inventory.</p>
+            </div>
+            
+            <!-- Username -->
+            <div class="mb-4">
+                <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                <input type="text" id="username" placeholder="e.g., admin or rgv_user" class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            
+            <!-- Password -->
+            <div class="mb-6">
+                <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                <input type="password" id="password" placeholder="******************" class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+
+            <!-- Role / Market -->
+            <div class="mb-6">
+                <label for="market-select" class="block text-gray-700 text-sm font-bold mb-2">Select Role / Market</label>
+                <select id="market-select" class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="admin">Admin (View All Data)</option>
+                    <!-- Other market options will be added here by JavaScript -->
+                </select>
+            </div>
+            
+            <!-- Date Range -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 sm:mb-8">
+                <div>
+                    <label for="start-date" class="block text-gray-700 text-sm font-bold mb-2">Start Date</label>
+                    <input type="date" id="start-date" class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700" required />
+                </div>
+                <div>
+                    <label for="end-date" class="block text-gray-700 text-sm font-bold mb-2">End Date</label>
+                    <input type="date" id="end-date" class="shadow-sm appearance-none border rounded-lg w-full py-3 px-4 text-gray-700" required />
+                </div>
+            </div>
+
+            <!-- Error Message Placeholder -->
+            <div id="error-message" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6 hidden" role="alert">
+                <span class="block sm:inline"></span>
+            </div>
+
+            <!-- Login Button -->
+            <div class="flex items-center justify-center">
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline text-lg">
+                    Login
+                </button>
+            </div>
+            <div>
+            <p class="text-center text-gray-500 text-xs mt-4">
+                &copy; copy rights reserved @2025, S3 Retail Solutions.
+            </p>
+            </div>
+        </form>
+    </div>
+    <script> window.CONFIG = { API_BASE: "https://iasr-s3-2.onrender.com" }; </script> <script src="js/login-logic.js"></script>
+</body>
+</html>
