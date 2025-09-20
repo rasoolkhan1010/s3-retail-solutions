@@ -92,7 +92,7 @@ app.post("/api/get-data-for-range", async (req, res) => {
     const start = startDate;
     // Append time to include whole day endDate until 23:59:59
     const end = `${endDate} 23:59:59`;
-    const q = `SELECT * FROM public.main_data_clientWHERE date BETWEEN $1 AND $2 ORDER BY date ASC`;
+    const q = `SELECT * FROM public.main_data_client WHERE date BETWEEN $1 AND $2 ORDER BY date ASC`;
     const result = await pool.query(q, [start, end]);
     if (!result.rows || result.rows.length === 0) {
       return res.json({ headers: CSV_HEADERS, data: [] });
@@ -162,7 +162,7 @@ app.get("/approved_suggestion.csv", (req, res) => {
 // Markets endpoint
 app.get("/api/get-all-markets", async (req, res) => {
   try {
-    const q = `SELECT DISTINCT marketid FROM public.main_data_clientWHERE marketid IS NOT NULL ORDER BY marketid ASC`;
+    const q = `SELECT DISTINCT marketid FROM public.main_data_client WHERE marketid IS NOT NULL ORDER BY marketid ASC`;
     const result = await pool.query(q);
     const markets = result.rows.map((r) => r.marketid);
     res.json({ data: markets });
