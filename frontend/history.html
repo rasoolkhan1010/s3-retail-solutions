@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Approval History</title>
+  <link href="dist/output.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    #export-btn {
+      background-color: rgb(26, 25, 25);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans">
+  <!-- Header -->
+  <header class="bg-white shadow-md">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-gray-800">Approval History</h1>
+      <div class="flex space-x-4">
+        <button id="export-btn" class="px-4 py-2 bg-green-600 text-white rounded">Export to Excel</button>
+        <a href="suggestions.html" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+          &larr; Back to Suggestions
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-6 py-8">
+    <!-- Filter Section -->
+    <div class="mb-6 flex space-x-4 items-center">
+      <label>
+        Start Date:
+        <input id="filter-start-date" type="date" class="border rounded px-2 py-1" />
+      </label>
+      <label>
+        End Date:
+        <input id="filter-end-date" type="date" class="border rounded px-2 py-1" />
+      </label>
+      <button id="apply-filter-btn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        Apply Filter
+      </button>
+    </div>
+
+    <!-- Data Table Section -->
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+      <div id="table-loading" class="p-6 text-center text-gray-600">Loading history, please wait...</div>
+      <div id="table-container" class="overflow-x-auto" style="display: none;">
+        <table id="history-table" class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <!-- Headers inserted dynamically -->
+            <tr></tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <!-- Table data inserted dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <p class="text-center text-gray-500 text-xs mt-4">
+        &copy; copy rights reserved @2025, S3 Retail Solutions.
+      </p>
+    </div>
+  </main>
+
+  <!-- Define API_BASE for backend requests -->
+  <script>
+    window.CONFIG = {
+      API_BASE: "https://iasr-s3-2.onrender.com"
+    };
+  </script>
+
+  <script src="js/history-logic.js"></script>
+</body>
+</html>
