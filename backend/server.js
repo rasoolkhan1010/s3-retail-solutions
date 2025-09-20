@@ -82,7 +82,7 @@ app.get("/health", async (req, res) => {
   }
 });
 
-// Data range endpoint for inventory_data
+// Data range endpoint for main data client
 app.post("/api/get-data-for-range", async (req, res) => {
   const { startDate, endDate } = req.body;
   if (!startDate || !endDate) {
@@ -172,7 +172,7 @@ app.get("/api/get-all-markets", async (req, res) => {
   }
 });
 
-// Add approved data to history_data table with correct quoting
+// Add approved data to history_client table with correct quoting
 app.post("/api/add-history", async (req, res) => {
   const {
     Marketid,
@@ -189,7 +189,7 @@ app.post("/api/add-history", async (req, res) => {
   const Approved_At = new Date().toISOString();
   try {
     const sql = `
-      INSERT INTO history_data (
+      INSERT INTO history_client (
         marketid, company, itmdesc, cost, "Total_Stock",
         "Original_Recommended_Qty", "Order_Qty", "Total_Cost",
         "Recommended_Shipping", "Approved_By", approved_at
@@ -234,7 +234,7 @@ app.post("/api/get-history-for-range", async (req, res) => {
         "Recommended_Shipping" AS recommended_shipping,
         "Approved_By" AS approved_by,
         approved_at
-      FROM history_data
+      FROM history_client
       WHERE approved_at BETWEEN $1 AND $2
     `;
 
