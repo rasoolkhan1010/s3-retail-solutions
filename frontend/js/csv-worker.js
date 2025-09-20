@@ -1,7 +1,7 @@
 // js/csv-worker.js — uses API_BASE passed from main thread
 self.importScripts("papaparse.min.js");
 
-let API_BASE = "https://iasr-s3-2.onrender.com"; // fallback
+let API_BASE = "https://s3-retail-solutions-backend.onrender.com"; // fallback
 
 self.onmessage = function (event) {
   // One-time config to set API base for the worker
