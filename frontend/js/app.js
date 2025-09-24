@@ -160,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
     tableLoading.textContent = `Loading data from ${startDateUS} to ${endDateUS}...`;
     try {
       // Use deployed backend and correct API route
-      const response = await fetch(`${API_BASE}/get-data-for-range`, {
+      const response = await fetch(`${API_BASE}/api/get-data-for-range`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ startDate: startISO, endDate: endISO }),
@@ -400,4 +400,5 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 12. Initialize pagination view ---
   fetchDataForRange();
 });
+
 
