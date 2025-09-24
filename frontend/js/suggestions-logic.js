@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", () => {
   // 0) Backend base URL
   const API_BASE = (window.CONFIG && window.CONFIG.API_BASE) || "https://s3-retail-solutions-backend.onrender.com";
@@ -575,5 +574,4 @@ document.addEventListener("DOMContentLoaded", () => {
     XLSX.writeFile(workbook, "suggestions_export.xlsx");
   }
 });
-
 
