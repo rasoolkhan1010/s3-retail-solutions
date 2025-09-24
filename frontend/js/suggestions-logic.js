@@ -515,6 +515,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
     }
+    
     alert(`${dataToSend.length} item(s) sent for approval successfully!`);
     if (approvalModal) approvalModal.style.display = "none";
     dataToSend = [];
@@ -574,4 +575,5 @@ document.addEventListener("DOMContentLoaded", () => {
     XLSX.writeFile(workbook, "suggestions_export.xlsx");
   }
 });
+
 
