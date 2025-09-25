@@ -14,6 +14,40 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentPage = 1;
   const rowsPerPage = 1000;
 
+  // Setup Fixed Header Table Structure
+  function setupFixedHeaderTable() {
+    const historyTable = document.getElementById("history-table");
+    if (!historyTable) return;
+
+    // Create a wrapper for the table with fixed headers
+    const tableWrapper = document.createElement("div");
+    tableWrapper.style.position = "relative";
+    tableWrapper.style.maxHeight = "600px";
+    tableWrapper.style.overflowY = "auto";
+    tableWrapper.style.overflowX = "auto";
+    tableWrapper.style.border = "1px solid #e5e7eb";
+    tableWrapper.style.borderRadius = "8px";
+
+    // Insert wrapper before table
+    historyTable.parentNode.insertBefore(tableWrapper, historyTable);
+    tableWrapper.appendChild(historyTable);
+
+    // Reset table styles to default
+    historyTable.style.display = "table";
+    historyTable.style.width = "100%";
+    historyTable.style.borderCollapse = "collapse";
+
+    // Style the thead for fixed positioning
+    const thead = historyTable.querySelector("thead");
+    if (thead) {
+      thead.style.position = "sticky";
+      thead.style.top = "0";
+      thead.style.zIndex = "10";
+      thead.style.backgroundColor = "#f9fafb";
+      thead.style.borderBottom = "2px solid #e5e7eb";
+    }
+  }
+
   function initFilters() {
     const start = sessionStorage.getItem("startDateISO") || "2025-01-01";
     const end = sessionStorage.getItem("endDateISO") || new Date().toISOString().slice(0,10);
@@ -43,6 +77,10 @@ document.addEventListener("DOMContentLoaded", () => {
       fullHistoryData = json.data || [];
       currentFilteredData = fullHistoryData;
       currentPage = 1;
+
+      // Setup fixed header table structure after data is loaded
+      setupFixedHeaderTable();
+      
       renderTableHeaders();
       updateTableByPage();
 
@@ -75,6 +113,20 @@ document.addEventListener("DOMContentLoaded", () => {
     headers.forEach(header => {
       const th = document.createElement("th");
       th.className = "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider";
+      th.style.minWidth = "150px"; // Ensure minimum width for readability
+      th.style.whiteSpace = "nowrap"; // Prevent text wrapping in headers
+      
+      // Adjust specific column widths
+      if (header === "Marketid") {
+        th.style.minWidth = "100px";
+      } else if (header === "Cost" || header === "Total Cost") {
+        th.style.minWidth = "120px";
+      } else if (header === "Approved At") {
+        th.style.minWidth = "180px";
+      } else if (header === "Recommended Shipping") {
+        th.style.minWidth = "160px";
+      }
+      
       th.textContent = header;
       tableHead.appendChild(th);
     });
@@ -99,15 +151,35 @@ document.addEventListener("DOMContentLoaded", () => {
       const tr = document.createElement("tr");
       tr.className = "hover:bg-gray-50";
 
-      dataKeys.forEach(key => {
+      dataKeys.forEach((key, index) => {
         const td = document.createElement("td");
         td.className = "px-6 py-4 whitespace-nowrap text-sm text-gray-800";
+        td.style.minWidth = "150px"; // Match header width
+        td.style.maxWidth = "200px"; // Prevent excessive stretching
+        td.style.overflow = "hidden";
+        td.style.textOverflow = "ellipsis";
+        
+        // Adjust specific column widths to match headers
+        const header = headers[index];
+        if (header === "Marketid") {
+          td.style.minWidth = "100px";
+        } else if (header === "Cost" || header === "Total Cost") {
+          td.style.minWidth = "120px";
+        } else if (header === "Approved At") {
+          td.style.minWidth = "180px";
+          td.style.maxWidth = "220px";
+        } else if (header === "Recommended Shipping") {
+          td.style.minWidth = "160px";
+        }
 
         let val = row[key];
         if (key === "approved_at" && val) {
           val = new Date(val).toLocaleString();
         }
-        td.textContent = val !== null && val !== undefined ? val : "";
+        
+        const displayValue = val !== null && val !== undefined ? val : "";
+        td.textContent = displayValue;
+        td.title = displayValue; // Add tooltip for full text
         tr.appendChild(td);
       });
 
@@ -206,7 +278,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const worksheetData = currentFilteredData.map(item => {
       const obj = {};
       headers.forEach((header, i) => {
-        obj[header] = item[dataKeys[i]] || "";
+        let value = item[dataKeys[i]] || "";
+        // Format date for Excel export
+        if (dataKeys[i] === "approved_at" && value) {
+          value = new Date(value).toLocaleString();
+        }
+        obj[header] = value;
       });
       return obj;
     });
