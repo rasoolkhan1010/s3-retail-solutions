@@ -2,7 +2,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // 0) Backend base URL
   const API_BASE = (window.CONFIG && window.CONFIG.API_BASE) || "https://s3-retail-solutions-backend.onrender.com";
 
-
   // 1) Security/session check
   const userRole = sessionStorage.getItem("userRole");
   let sd = sessionStorage.getItem("startDate");
@@ -102,7 +101,41 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   if (exportBtn) exportBtn.addEventListener("click", exportToExcel);
 
-  // 7) Pagination setup
+  // 7) Setup Fixed Header Table Structure
+  function setupFixedHeaderTable() {
+    const dataTable = document.getElementById("data-table");
+    if (!dataTable) return;
+
+    // Create a wrapper for the table with fixed headers
+    const tableWrapper = document.createElement("div");
+    tableWrapper.style.position = "relative";
+    tableWrapper.style.maxHeight = "600px";
+    tableWrapper.style.overflowY = "auto";
+    tableWrapper.style.overflowX = "auto";
+    tableWrapper.style.border = "1px solid #e5e7eb";
+    tableWrapper.style.borderRadius = "8px";
+
+    // Insert wrapper before table
+    dataTable.parentNode.insertBefore(tableWrapper, dataTable);
+    tableWrapper.appendChild(dataTable);
+
+    // Reset table styles to default
+    dataTable.style.display = "table";
+    dataTable.style.width = "100%";
+    dataTable.style.borderCollapse = "collapse";
+
+    // Style the thead for fixed positioning
+    const thead = dataTable.querySelector("thead");
+    if (thead) {
+      thead.style.position = "sticky";
+      thead.style.top = "0";
+      thead.style.zIndex = "10";
+      thead.style.backgroundColor = "#f9fafb";
+      thead.style.borderBottom = "2px solid #e5e7eb";
+    }
+  }
+
+  // 8) Pagination setup
   const paginationContainer = document.createElement("div");
   paginationContainer.classList.add("pagination-container");
   paginationContainer.style.marginTop = "10px";
@@ -170,7 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateDataCount();
   }
 
-  // 8) Fetch data function
+  // 9) Fetch data function
   async function fetchDataForRange() {
     if (tableLoading) {
       tableLoading.textContent = `Loading data from ${startDateUS} to ${endDateUS}...`;
@@ -209,7 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   fetchDataForRange();
 
-  // 9) Initialize and add event listeners
+  // 10) Initialize and add event listeners
   function initializeView() {
     if (!fullData || fullData.length === 0) {
       if (tableLoading) tableLoading.textContent = "No data available for the selected date range.";
@@ -217,6 +250,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (tableLoading) tableLoading.style.display = "none";
     if (tableContainer) tableContainer.style.display = "block";
+
+    // Setup fixed header table structure
+    setupFixedHeaderTable();
 
     if (userRole !== "admin" && marketIdFilter) {
       marketIdFilter.disabled = true;
@@ -256,7 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (sendSelectedBtn) sendSelectedBtn.addEventListener("click", handleBulkSend);
   }
 
-  // 10) Filter helpers and logic
+  // 11) Filter helpers and logic
   function updateDependentFilters() {
     if (!marketIdFilter) return;
     const marketQuery = marketIdFilter.value;
@@ -333,14 +369,18 @@ document.addEventListener("DOMContentLoaded", () => {
     updateTableByPage();
   }
 
-  // 11) Table rendering functions
+  // 12) Table rendering functions
   function renderTableHeaders() {
     if (!tableHead) return;
     tableHead.innerHTML = "";
     desiredHeaders.forEach(headerText => {
       const th = document.createElement("th");
       th.className = "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider";
+      th.style.minWidth = "150px"; // Ensure minimum width for readability
+      th.style.whiteSpace = "nowrap"; // Prevent text wrapping in headers
+      
       if (headerText === "Select") {
+        th.style.minWidth = "80px"; // Smaller width for checkbox column
         const selectAllCheckbox = document.createElement("input");
         selectAllCheckbox.type = "checkbox";
         selectAllCheckbox.className = "form-checkbox h-4 w-4 text-indigo-600";
@@ -350,12 +390,16 @@ document.addEventListener("DOMContentLoaded", () => {
           tableBody.querySelectorAll("input.row-checkbox").forEach(box => (box.checked = checked));
         });
         th.appendChild(selectAllCheckbox);
+      } else if (headerText === "Action") {
+        th.style.minWidth = "100px"; // Smaller width for action column
+        th.textContent = headerText;
       } else {
         th.textContent = headerText;
       }
       tableHead.appendChild(th);
     });
   }
+
   function renderTableBody(data) {
     if (!tableBody) return;
     tableBody.innerHTML = "";
@@ -376,8 +420,13 @@ document.addEventListener("DOMContentLoaded", () => {
       desiredHeaders.forEach(headerKey => {
         const td = document.createElement("td");
         td.className = "px-6 py-4 whitespace-nowrap text-sm text-gray-800";
+        td.style.minWidth = "150px"; // Match header width
+        td.style.maxWidth = "200px"; // Prevent excessive stretching
+        td.style.overflow = "hidden";
+        td.style.textOverflow = "ellipsis";
 
         if (headerKey === "Select") {
+          td.style.minWidth = "80px"; // Match header width for checkbox
           const checkbox = document.createElement("input");
           checkbox.type = "checkbox";
           checkbox.className = "form-checkbox h-4 w-4 text-indigo-600 row-checkbox";
@@ -385,6 +434,7 @@ document.addEventListener("DOMContentLoaded", () => {
           td.appendChild(checkbox);
 
         } else if (headerKey === "Action") {
+          td.style.minWidth = "100px"; // Match header width for action
           const sendBtn = document.createElement("button");
           sendBtn.textContent = "Approve";
           sendBtn.className = "bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded text-xs";
@@ -394,6 +444,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (headerKey === "recommended shipping") {
           const select = document.createElement("select");
           select.className = "recommended-shipping border rounded px-2 py-1 text-xs";
+          select.style.width = "100%";
           select.dataset.key = rowKey;
           SHIPPING_OPTIONS.forEach(v => {
             const o = document.createElement("option");
@@ -413,7 +464,8 @@ document.addEventListener("DOMContentLoaded", () => {
           const input = document.createElement("input");
           input.type = "number";
           input.step = "any";
-          input.className = "needed-qty border rounded px-2 py-1 w-24 text-xs";
+          input.className = "needed-qty border rounded px-2 py-1 w-full text-xs";
+          input.style.maxWidth = "100px";
           input.value = init;
           input.dataset.key = rowKey;
           input.addEventListener("input", () => {
@@ -446,14 +498,15 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           if (value === undefined || value === null || value === "") value = 0;
           td.textContent = value;
+          td.title = value; // Add tooltip for full text
         }
         tr.appendChild(td);
       });
       tableBody.appendChild(tr);
     });
-  } 
+  }
 
-  // 12) Modal approval flow as you have (unchanged)
+  // 13) Modal approval flow
   function openSendModal(items) {
     if (!items || items.length === 0) {
       alert("Please select at least one item to send.");
@@ -525,7 +578,7 @@ document.addEventListener("DOMContentLoaded", () => {
     applyFilters();
   }
 
-  // 13) Update data count
+  // 14) Update data count
   function updateDataCount() {
     if (!dataCountElement) return;
     const rowCount = currentFilteredData.length;
@@ -535,7 +588,7 @@ document.addEventListener("DOMContentLoaded", () => {
       : "No data to display";
   }
 
-  // 14) Export to Excel (fixed and complete)
+  // 15) Export to Excel
   function exportToExcel() {
     if (!currentFilteredData || currentFilteredData.length === 0) {
       alert("No data to export.");
@@ -575,16 +628,3 @@ document.addEventListener("DOMContentLoaded", () => {
     XLSX.writeFile(workbook, "suggestions_export.xlsx");
   }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
