@@ -1,4 +1,4 @@
-// app.js — static site, centralized API base and correct endpoints with fixed headers
+// app.js — static site, centralized API base and correct endpoints with fixed headers (CORRECTED)
 
 document.addEventListener("DOMContentLoaded", () => {
   // Base API URL from global config (set in index.html). Fallback is the deployed backend.
@@ -84,30 +84,32 @@ document.addEventListener("DOMContentLoaded", () => {
     const dataTable = document.getElementById("data-table");
     if (!dataTable) return;
 
-    // Apply fixed header styles to the table
-    dataTable.style.display = "block";
-    dataTable.style.border = "1px solid #e5e7eb";
-    dataTable.style.borderRadius = "8px";
-    dataTable.style.overflow = "hidden";
+    // Create a wrapper for the table with fixed headers
+    const tableWrapper = document.createElement("div");
+    tableWrapper.style.position = "relative";
+    tableWrapper.style.maxHeight = "600px";
+    tableWrapper.style.overflowY = "auto";
+    tableWrapper.style.overflowX = "auto";
+    tableWrapper.style.border = "1px solid #e5e7eb";
+    tableWrapper.style.borderRadius = "8px";
+
+    // Insert wrapper before table
+    dataTable.parentNode.insertBefore(tableWrapper, dataTable);
+    tableWrapper.appendChild(dataTable);
+
+    // Reset table styles to default
+    dataTable.style.display = "table";
+    dataTable.style.width = "100%";
+    dataTable.style.borderCollapse = "collapse";
 
     // Style the thead for fixed positioning
     const thead = dataTable.querySelector("thead");
     if (thead) {
-      thead.style.display = "block";
-      thead.style.backgroundColor = "#f9fafb";
-      thead.style.borderBottom = "2px solid #e5e7eb";
       thead.style.position = "sticky";
       thead.style.top = "0";
       thead.style.zIndex = "10";
-    }
-
-    // Style the tbody for scrolling
-    const tbody = dataTable.querySelector("tbody");
-    if (tbody) {
-      tbody.style.display = "block";
-      tbody.style.maxHeight = "600px";
-      tbody.style.overflowY = "auto";
-      tbody.style.overflowX = "hidden";
+      thead.style.backgroundColor = "#f9fafb";
+      thead.style.borderBottom = "2px solid #e5e7eb";
     }
   }
 
@@ -357,39 +359,23 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 10. Table Rendering ---
   function renderTableHeaders() {
     tableHead.innerHTML = "";
-    
-    // Create header row with fixed widths
-    const headerRow = document.createElement("tr");
-    headerRow.style.display = "table";
-    headerRow.style.width = "100%";
-    headerRow.style.tableLayout = "fixed";
-    
     for (let i = 0; i < Math.min(headers.length, columnsToShow); i++) {
       const th = document.createElement("th");
       th.className = "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider";
-      th.style.display = "table-cell";
-      th.style.width = `${100 / Math.min(headers.length, columnsToShow)}%`;
-      th.style.minWidth = "120px";
-      th.style.boxSizing = "border-box";
+      th.style.minWidth = "150px"; // Ensure minimum width for readability
+      th.style.whiteSpace = "nowrap"; // Prevent text wrapping in headers
       th.textContent = headers[i].replace(/_/g, " ");
-      headerRow.appendChild(th);
+      tableHead.appendChild(th);
     }
-    
-    tableHead.appendChild(headerRow);
   }
 
   function renderTableBody(data) {
     tableBody.innerHTML = "";
     if (data.length === 0) {
       const tr = document.createElement("tr");
-      tr.style.display = "table";
-      tr.style.width = "100%";
-      tr.style.tableLayout = "fixed";
-      
       const td = document.createElement("td");
       td.colSpan = columnsToShow;
       td.className = "text-center py-8 text-gray-500";
-      td.style.display = "table-cell";
       td.textContent = "No records match the current filters.";
       tr.appendChild(td);
       tableBody.appendChild(tr);
@@ -399,24 +385,19 @@ document.addEventListener("DOMContentLoaded", () => {
     data.forEach((row) => {
       const tr = document.createElement("tr");
       tr.className = "hover:bg-gray-50";
-      tr.style.display = "table";
-      tr.style.width = "100%";
-      tr.style.tableLayout = "fixed";
-      
       for (let i = 0; i < Math.min(headers.length, columnsToShow); i++) {
         const header = headers[i];
         const td = document.createElement("td");
         td.className = "px-6 py-4 whitespace-nowrap text-sm text-gray-800";
-        td.style.display = "table-cell";
-        td.style.width = `${100 / Math.min(headers.length, columnsToShow)}%`;
-        td.style.minWidth = "120px";
-        td.style.boxSizing = "border-box";
+        td.style.minWidth = "150px"; // Match header width
+        td.style.maxWidth = "200px"; // Prevent excessive stretching
         td.style.overflow = "hidden";
         td.style.textOverflow = "ellipsis";
         
         let value = row[header];
         if (value === undefined || value === null || value === "") value = 0;
         td.textContent = value;
+        td.title = value; // Add tooltip for full text
         tr.appendChild(td);
       }
       tableBody.appendChild(tr);
