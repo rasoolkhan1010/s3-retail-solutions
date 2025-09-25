@@ -1,4 +1,4 @@
-// app.js — static site, centralized API base and correct endpoints
+// app.js — static site, centralized API base and correct endpoints with fixed headers
 
 document.addEventListener("DOMContentLoaded", () => {
   // Base API URL from global config (set in index.html). Fallback is the deployed backend.
@@ -79,7 +79,39 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   if (exportBtn) exportBtn.addEventListener("click", exportToExcel);
 
-  // --- 5. Pagination Controls ---
+  // --- 5. Setup Fixed Header Table Structure ---
+  function setupFixedHeaderTable() {
+    const dataTable = document.getElementById("data-table");
+    if (!dataTable) return;
+
+    // Apply fixed header styles to the table
+    dataTable.style.display = "block";
+    dataTable.style.border = "1px solid #e5e7eb";
+    dataTable.style.borderRadius = "8px";
+    dataTable.style.overflow = "hidden";
+
+    // Style the thead for fixed positioning
+    const thead = dataTable.querySelector("thead");
+    if (thead) {
+      thead.style.display = "block";
+      thead.style.backgroundColor = "#f9fafb";
+      thead.style.borderBottom = "2px solid #e5e7eb";
+      thead.style.position = "sticky";
+      thead.style.top = "0";
+      thead.style.zIndex = "10";
+    }
+
+    // Style the tbody for scrolling
+    const tbody = dataTable.querySelector("tbody");
+    if (tbody) {
+      tbody.style.display = "block";
+      tbody.style.maxHeight = "600px";
+      tbody.style.overflowY = "auto";
+      tbody.style.overflowX = "hidden";
+    }
+  }
+
+  // --- 6. Pagination Controls ---
   const paginationContainer = document.createElement("div");
   paginationContainer.classList.add("pagination-container");
   paginationContainer.style.marginTop = "10px";
@@ -155,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateDataCount();
   }
 
-  // --- 6. Data Fetching ---
+  // --- 7. Data Fetching ---
   async function fetchDataForRange() {
     tableLoading.textContent = `Loading data from ${startDateUS} to ${endDateUS}...`;
     try {
@@ -199,7 +231,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- 7. View Initialization ---
+  // --- 8. View Initialization ---
   function initializeView() {
     if (!fullData || fullData.length === 0) {
       tableLoading.textContent = "No data available for the selected date range.";
@@ -207,6 +239,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     tableLoading.style.display = "none";
     tableContainer.style.display = "block";
+
+    // Setup fixed header table structure
+    setupFixedHeaderTable();
 
     // Set market filter according to userRole
     if (userRole !== "admin") {
@@ -245,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
     quantityFilter.addEventListener("change", applyFilters);
   }
 
-  // --- 8. Filtering & Dropdown Updates ---
+  // --- 9. Filtering & Dropdown Updates ---
   function updateDependentFilters() {
     const marketQuery = marketIdFilter.value;
     let visibleData = fullData.filter((row) => marketQuery === "ALL" || row.Marketid === marketQuery);
@@ -319,24 +354,42 @@ document.addEventListener("DOMContentLoaded", () => {
     updateTableByPage();
   }
 
-  // --- 9. Table Rendering ---
+  // --- 10. Table Rendering ---
   function renderTableHeaders() {
     tableHead.innerHTML = "";
+    
+    // Create header row with fixed widths
+    const headerRow = document.createElement("tr");
+    headerRow.style.display = "table";
+    headerRow.style.width = "100%";
+    headerRow.style.tableLayout = "fixed";
+    
     for (let i = 0; i < Math.min(headers.length, columnsToShow); i++) {
       const th = document.createElement("th");
       th.className = "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider";
+      th.style.display = "table-cell";
+      th.style.width = `${100 / Math.min(headers.length, columnsToShow)}%`;
+      th.style.minWidth = "120px";
+      th.style.boxSizing = "border-box";
       th.textContent = headers[i].replace(/_/g, " ");
-      tableHead.appendChild(th);
+      headerRow.appendChild(th);
     }
+    
+    tableHead.appendChild(headerRow);
   }
 
   function renderTableBody(data) {
     tableBody.innerHTML = "";
     if (data.length === 0) {
       const tr = document.createElement("tr");
+      tr.style.display = "table";
+      tr.style.width = "100%";
+      tr.style.tableLayout = "fixed";
+      
       const td = document.createElement("td");
       td.colSpan = columnsToShow;
       td.className = "text-center py-8 text-gray-500";
+      td.style.display = "table-cell";
       td.textContent = "No records match the current filters.";
       tr.appendChild(td);
       tableBody.appendChild(tr);
@@ -346,10 +399,21 @@ document.addEventListener("DOMContentLoaded", () => {
     data.forEach((row) => {
       const tr = document.createElement("tr");
       tr.className = "hover:bg-gray-50";
+      tr.style.display = "table";
+      tr.style.width = "100%";
+      tr.style.tableLayout = "fixed";
+      
       for (let i = 0; i < Math.min(headers.length, columnsToShow); i++) {
         const header = headers[i];
         const td = document.createElement("td");
         td.className = "px-6 py-4 whitespace-nowrap text-sm text-gray-800";
+        td.style.display = "table-cell";
+        td.style.width = `${100 / Math.min(headers.length, columnsToShow)}%`;
+        td.style.minWidth = "120px";
+        td.style.boxSizing = "border-box";
+        td.style.overflow = "hidden";
+        td.style.textOverflow = "ellipsis";
+        
         let value = row[header];
         if (value === undefined || value === null || value === "") value = 0;
         td.textContent = value;
@@ -361,7 +425,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateDataCount();
   }
 
-  // --- 10. Data count display ---
+  // --- 11. Data count display ---
   function updateDataCount() {
     if (!dataCountElement) return;
     const rowCount = currentFilteredData.length;
@@ -374,7 +438,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : "No data to display";
   }
 
-  // --- 11. Export ---
+  // --- 12. Export ---
   function exportToExcel() {
     if (!currentFilteredData || currentFilteredData.length === 0) {
       alert("No data to export.");
@@ -397,6 +461,6 @@ document.addEventListener("DOMContentLoaded", () => {
     XLSX.writeFile(workbook, "dashboard_export.xlsx");
   }
 
-  // --- 12. Initialize pagination view ---
+  // --- 13. Initialize pagination view ---
   fetchDataForRange();
 });
