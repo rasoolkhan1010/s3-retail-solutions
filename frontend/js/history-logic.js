@@ -19,7 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const historyTable = document.getElementById("history-table");
     if (!historyTable) return;
 
-    // Create a wrapper for the table with fixed headers
     const tableWrapper = document.createElement("div");
     tableWrapper.style.position = "relative";
     tableWrapper.style.maxHeight = "600px";
@@ -28,16 +27,13 @@ document.addEventListener("DOMContentLoaded", () => {
     tableWrapper.style.border = "1px solid #e5e7eb";
     tableWrapper.style.borderRadius = "8px";
 
-    // Insert wrapper before table
     historyTable.parentNode.insertBefore(tableWrapper, historyTable);
     tableWrapper.appendChild(historyTable);
 
-    // Reset table styles to default
     historyTable.style.display = "table";
     historyTable.style.width = "100%";
     historyTable.style.borderCollapse = "collapse";
 
-    // Style the thead for fixed positioning
     const thead = historyTable.querySelector("thead");
     if (thead) {
       thead.style.position = "sticky";
@@ -63,7 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     try {
       const userRole = sessionStorage.getItem("userRole") || "admin";
-      // Debug log to check sent marketid
       console.log("Sending history request with marketid:", userRole);
 
       const response = await fetch(`${window.CONFIG.API_BASE}/api/get-history-for-range`, {
@@ -78,7 +73,6 @@ document.addEventListener("DOMContentLoaded", () => {
       currentFilteredData = fullHistoryData;
       currentPage = 1;
 
-      // Setup fixed header table structure after data is loaded
       setupFixedHeaderTable();
       
       renderTableHeaders();
@@ -96,15 +90,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // UPDATED HEADERS AND KEYS (WITH COMMENTS)
   const headers = [
     "Marketid", "Company", "Itmdesc", "Cost", "Total Stock",
     "Original Recommended Qty", "Order Qty", "Total Cost",
-    "Recommended Shipping", "Approved By", "Approved At",
+    "Recommended Shipping", "Approved By", "Approved At", "Comments"
   ];
   const dataKeys = [
     "marketid", "company", "itmdesc", "cost", "total_stock",
     "original_recommended_qty", "order_qty", "total_cost",
-    "recommended_shipping", "approved_by", "approved_at",
+    "recommended_shipping", "approved_by", "approved_at", "comments"
   ];
 
   function renderTableHeaders() {
@@ -113,10 +108,9 @@ document.addEventListener("DOMContentLoaded", () => {
     headers.forEach(header => {
       const th = document.createElement("th");
       th.className = "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider";
-      th.style.minWidth = "150px"; // Ensure minimum width for readability
-      th.style.whiteSpace = "nowrap"; // Prevent text wrapping in headers
+      th.style.minWidth = "150px";
+      th.style.whiteSpace = "nowrap";
       
-      // Adjust specific column widths
       if (header === "Marketid") {
         th.style.minWidth = "100px";
       } else if (header === "Cost" || header === "Total Cost") {
@@ -125,6 +119,8 @@ document.addEventListener("DOMContentLoaded", () => {
         th.style.minWidth = "180px";
       } else if (header === "Recommended Shipping") {
         th.style.minWidth = "160px";
+      } else if (header === "Comments") {
+        th.style.minWidth = "200px";
       }
       
       th.textContent = header;
@@ -147,20 +143,19 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    data.forEach(row => {
+    data.forEach((row, index) => {
       const tr = document.createElement("tr");
       tr.className = "hover:bg-gray-50";
 
-      dataKeys.forEach((key, index) => {
+      dataKeys.forEach((key, colIndex) => {
         const td = document.createElement("td");
         td.className = "px-6 py-4 whitespace-nowrap text-sm text-gray-800";
-        td.style.minWidth = "150px"; // Match header width
-        td.style.maxWidth = "200px"; // Prevent excessive stretching
+        td.style.minWidth = "150px";
+        td.style.maxWidth = "200px";
         td.style.overflow = "hidden";
         td.style.textOverflow = "ellipsis";
         
-        // Adjust specific column widths to match headers
-        const header = headers[index];
+        const header = headers[colIndex];
         if (header === "Marketid") {
           td.style.minWidth = "100px";
         } else if (header === "Cost" || header === "Total Cost") {
@@ -170,6 +165,34 @@ document.addEventListener("DOMContentLoaded", () => {
           td.style.maxWidth = "220px";
         } else if (header === "Recommended Shipping") {
           td.style.minWidth = "160px";
+        } else if (header === "Comments") {
+          td.style.minWidth = "200px";
+          td.style.maxWidth = "300px";
+          // Special handling for comments - expandable
+          const commentText = row[key] || "";
+          if (commentText.length > 50) {
+            td.style.cursor = "pointer";
+            td.textContent = commentText.substring(0, 50) + "...";
+            td.title = "Click to expand/collapse";
+            td.addEventListener("click", () => {
+              const isExpanded = td.dataset.expanded === "true";
+              if (isExpanded) {
+                td.textContent = commentText.substring(0, 50) + "...";
+                td.style.whiteSpace = "nowrap";
+                td.dataset.expanded = "false";
+              } else {
+                td.textContent = commentText;
+                td.style.whiteSpace = "normal";
+                td.style.wordWrap = "break-word";
+                td.dataset.expanded = "true";
+              }
+            });
+          } else {
+            td.textContent = commentText;
+          }
+          td.title = commentText; // Full text as tooltip
+          tr.appendChild(td);
+          return;
         }
 
         let val = row[key];
@@ -179,7 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         const displayValue = val !== null && val !== undefined ? val : "";
         td.textContent = displayValue;
-        td.title = displayValue; // Add tooltip for full text
+        td.title = displayValue;
         tr.appendChild(td);
       });
 
@@ -270,6 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
       : "No data to display";
   }
 
+  // UPDATED EXPORT FUNCTION (WITH COMMENTS)
   function exportToExcel() {
     if (!currentFilteredData.length) {
       alert("No data to export.");
@@ -279,7 +303,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const obj = {};
       headers.forEach((header, i) => {
         let value = item[dataKeys[i]] || "";
-        // Format date for Excel export
         if (dataKeys[i] === "approved_at" && value) {
           value = new Date(value).toLocaleString();
         }
