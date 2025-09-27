@@ -71,12 +71,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const rowsPerPage = 1000;
   let currentPage = 1;
 
-  // 5) Headers and column mapping
+  // 5) Headers and column mapping (UPDATED WITH COMMENTS)
   const desiredHeaders = [
     "Select", "Market-id", "company", "Itmdesc", "Cost",
     "Total_Stock", "30_days", "W3",
     "Recommended Quntitty", "required qty", "Total Cost",
-    "recommended shipping", "Action"
+    "recommended shipping", "Comments", "Action"
   ];
   const columnMapping = {
     "Market-id": "Marketid",
@@ -106,7 +106,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const dataTable = document.getElementById("data-table");
     if (!dataTable) return;
 
-    // Create a wrapper for the table with fixed headers
     const tableWrapper = document.createElement("div");
     tableWrapper.style.position = "relative";
     tableWrapper.style.maxHeight = "600px";
@@ -115,27 +114,49 @@ document.addEventListener("DOMContentLoaded", () => {
     tableWrapper.style.border = "1px solid #e5e7eb";
     tableWrapper.style.borderRadius = "8px";
 
-    // Insert wrapper before table
     dataTable.parentNode.insertBefore(tableWrapper, dataTable);
     tableWrapper.appendChild(dataTable);
 
-    // Reset table styles to default
     dataTable.style.display = "table";
     dataTable.style.width = "100%";
     dataTable.style.borderCollapse = "collapse";
 
-    // Style the thead for fixed positioning
     const thead = dataTable.querySelector("thead");
     if (thead) {
       thead.style.position = "sticky";
       thead.style.top = "0";
-      thead.style.zIndex = "10";
+      thead.style.zIndex = "5"; // REDUCED: Lower z-index to prevent modal overlap
       thead.style.backgroundColor = "#f9fafb";
       thead.style.borderBottom = "2px solid #e5e7eb";
     }
   }
 
-  // 8) Pagination setup
+  // 8) Setup Modal with proper z-index
+  function setupModalZIndex() {
+    if (approvalModal) {
+      // Ensure modal has highest z-index
+      approvalModal.style.zIndex = "9999";
+      approvalModal.style.position = "fixed";
+      approvalModal.style.top = "0";
+      approvalModal.style.left = "0";
+      approvalModal.style.width = "100%";
+      approvalModal.style.height = "100%";
+      approvalModal.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+      
+      // Find the modal content div and ensure it's properly centered
+      const modalContent = approvalModal.querySelector('.modal-content, .bg-white, [class*="modal"]');
+      if (modalContent) {
+        modalContent.style.position = "relative";
+        modalContent.style.zIndex = "10000";
+        modalContent.style.margin = "auto";
+        modalContent.style.marginTop = "10vh";
+        modalContent.style.maxHeight = "80vh";
+        modalContent.style.overflowY = "auto";
+      }
+    }
+  }
+
+  // 9) Pagination setup
   const paginationContainer = document.createElement("div");
   paginationContainer.classList.add("pagination-container");
   paginationContainer.style.marginTop = "10px";
@@ -203,7 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateDataCount();
   }
 
-  // 9) Fetch data function
+  // 10) Fetch data function
   async function fetchDataForRange() {
     if (tableLoading) {
       tableLoading.textContent = `Loading data from ${startDateUS} to ${endDateUS}...`;
@@ -229,6 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return {
           ...r,
           ["Recommended Quntitty"]: raw === undefined || raw === null || raw === "" || Number.isNaN(num) ? "0" : String(num),
+          _comment: "" // Initialize comment field
         };
       });
       fullData.sort((a, b) => new Date(b.Date) - new Date(a.Date));
@@ -242,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   fetchDataForRange();
 
-  // 10) Initialize and add event listeners
+  // 11) Initialize and add event listeners
   function initializeView() {
     if (!fullData || fullData.length === 0) {
       if (tableLoading) tableLoading.textContent = "No data available for the selected date range.";
@@ -251,8 +273,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (tableLoading) tableLoading.style.display = "none";
     if (tableContainer) tableContainer.style.display = "block";
 
-    // Setup fixed header table structure
     setupFixedHeaderTable();
+    setupModalZIndex(); // SETUP MODAL Z-INDEX
 
     if (userRole !== "admin" && marketIdFilter) {
       marketIdFilter.disabled = true;
@@ -286,13 +308,30 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dateFilter) dateFilter.addEventListener("change", applyFilters);
     if (quantityFilter) quantityFilter.addEventListener("change", applyFilters);
 
-    // Modal event listeners
-    if (modalCancelBtn) modalCancelBtn.addEventListener("click", () => (approvalModal.style.display = "none"));
+    // Modal event listeners with body scroll prevention
+    if (modalCancelBtn) modalCancelBtn.addEventListener("click", closeModal);
     if (modalOkayBtn) modalOkayBtn.addEventListener("click", sendApproval);
     if (sendSelectedBtn) sendSelectedBtn.addEventListener("click", handleBulkSend);
   }
 
-  // 11) Filter helpers and logic
+  // 12) Modal functions with scroll prevention
+  function closeModal() {
+    if (approvalModal) {
+      approvalModal.style.display = "none";
+      // Re-enable body scroll
+      document.body.style.overflow = "auto";
+    }
+  }
+
+  function openModal() {
+    if (approvalModal) {
+      approvalModal.style.display = "flex";
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = "hidden";
+    }
+  }
+
+  // 13) Filter helpers and logic
   function updateDependentFilters() {
     if (!marketIdFilter) return;
     const marketQuery = marketIdFilter.value;
@@ -369,18 +408,18 @@ document.addEventListener("DOMContentLoaded", () => {
     updateTableByPage();
   }
 
-  // 12) Table rendering functions
+  // 14) Table rendering functions (UPDATED WITH COMMENTS)
   function renderTableHeaders() {
     if (!tableHead) return;
     tableHead.innerHTML = "";
     desiredHeaders.forEach(headerText => {
       const th = document.createElement("th");
       th.className = "px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider";
-      th.style.minWidth = "150px"; // Ensure minimum width for readability
-      th.style.whiteSpace = "nowrap"; // Prevent text wrapping in headers
+      th.style.minWidth = "150px";
+      th.style.whiteSpace = "nowrap";
       
       if (headerText === "Select") {
-        th.style.minWidth = "80px"; // Smaller width for checkbox column
+        th.style.minWidth = "80px";
         const selectAllCheckbox = document.createElement("input");
         selectAllCheckbox.type = "checkbox";
         selectAllCheckbox.className = "form-checkbox h-4 w-4 text-indigo-600";
@@ -391,7 +430,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         th.appendChild(selectAllCheckbox);
       } else if (headerText === "Action") {
-        th.style.minWidth = "100px"; // Smaller width for action column
+        th.style.minWidth = "100px";
+        th.textContent = headerText;
+      } else if (headerText === "Comments") {
+        th.style.minWidth = "200px";
         th.textContent = headerText;
       } else {
         th.textContent = headerText;
@@ -420,13 +462,13 @@ document.addEventListener("DOMContentLoaded", () => {
       desiredHeaders.forEach(headerKey => {
         const td = document.createElement("td");
         td.className = "px-6 py-4 whitespace-nowrap text-sm text-gray-800";
-        td.style.minWidth = "150px"; // Match header width
-        td.style.maxWidth = "200px"; // Prevent excessive stretching
+        td.style.minWidth = "150px";
+        td.style.maxWidth = "200px";
         td.style.overflow = "hidden";
         td.style.textOverflow = "ellipsis";
 
         if (headerKey === "Select") {
-          td.style.minWidth = "80px"; // Match header width for checkbox
+          td.style.minWidth = "80px";
           const checkbox = document.createElement("input");
           checkbox.type = "checkbox";
           checkbox.className = "form-checkbox h-4 w-4 text-indigo-600 row-checkbox";
@@ -434,12 +476,28 @@ document.addEventListener("DOMContentLoaded", () => {
           td.appendChild(checkbox);
 
         } else if (headerKey === "Action") {
-          td.style.minWidth = "100px"; // Match header width for action
+          td.style.minWidth = "100px";
           const sendBtn = document.createElement("button");
           sendBtn.textContent = "Approve";
           sendBtn.className = "bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded text-xs";
           sendBtn.onclick = () => openSendModal([row]);
           td.appendChild(sendBtn);
+
+        } else if (headerKey === "Comments") {
+          td.style.minWidth = "200px";
+          td.style.maxWidth = "250px";
+          const textarea = document.createElement("textarea");
+          textarea.className = "comment-field border rounded px-2 py-1 text-xs resize-none";
+          textarea.style.width = "100%";
+          textarea.style.height = "60px";
+          textarea.placeholder = "Add your comments here...";
+          textarea.dataset.key = rowKey;
+          textarea.value = row._comment || "";
+          textarea.addEventListener("input", () => {
+            const rec = fullData.find(r => keyOf(r) === rowKey);
+            if (rec) rec._comment = textarea.value;
+          });
+          td.appendChild(textarea);
 
         } else if (headerKey === "recommended shipping") {
           const select = document.createElement("select");
@@ -498,7 +556,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           if (value === undefined || value === null || value === "") value = 0;
           td.textContent = value;
-          td.title = value; // Add tooltip for full text
+          td.title = value;
         }
         tr.appendChild(td);
       });
@@ -506,7 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 13) Modal approval flow
+  // 15) Modal approval flow (UPDATED WITH PROPER MODAL HANDLING)
   function openSendModal(items) {
     if (!items || items.length === 0) {
       alert("Please select at least one item to send.");
@@ -515,7 +573,7 @@ document.addEventListener("DOMContentLoaded", () => {
     dataToSend = items;
     if (modalItemCount) modalItemCount.textContent = items.length;
     if (modalApproverSelect) modalApproverSelect.value = "";
-    if (approvalModal) approvalModal.style.display = "flex";
+    openModal(); // Use the proper modal open function
   }
 
   function handleBulkSend() {
@@ -539,6 +597,7 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Please select an approver.");
       return;
     }
+    
     for (const item of dataToSend) {
       const rqRaw = item["Recommended Quntitty"];
       const recommendedQty = Number.isNaN(parseFloat(rqRaw)) ? 0 : parseFloat(rqRaw);
@@ -547,6 +606,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const sel = document.querySelector(`select.recommended-shipping[data-key="${keyOf(item)}"]`);
       const shipping = sel ? sel.value : item["Recommended Shipping"] || "No order needed";
       const totalCost = (neededQty * itemCost).toFixed(2);
+      
+      // Get the comment for this item
+      const comments = item._comment || "";
+      
       try {
         await fetch(`${API_BASE}/api/add-history`, {
           method: "POST",
@@ -562,6 +625,7 @@ document.addEventListener("DOMContentLoaded", () => {
             Total_Cost: totalCost,
             Recommended_Shipping: shipping,
             Approved_By: approver,
+            Comments: comments // Send comments to backend
           }),
         });
       } catch (error) {
@@ -569,8 +633,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
     }
+    
     alert(`${dataToSend.length} item(s) sent for approval successfully!`);
-    if (approvalModal) approvalModal.style.display = "none";
+    closeModal(); // Use proper modal close function
     dataToSend = [];
     if (tableBody) {
       tableBody.querySelectorAll("input.row-checkbox:checked").forEach(cb => (cb.checked = false));
@@ -578,7 +643,7 @@ document.addEventListener("DOMContentLoaded", () => {
     applyFilters();
   }
 
-  // 14) Update data count
+  // 16) Update data count
   function updateDataCount() {
     if (!dataCountElement) return;
     const rowCount = currentFilteredData.length;
@@ -588,13 +653,12 @@ document.addEventListener("DOMContentLoaded", () => {
       : "No data to display";
   }
 
-  // 15) Export to Excel
+  // 17) Export to Excel (UPDATED WITH COMMENTS)
   function exportToExcel() {
     if (!currentFilteredData || currentFilteredData.length === 0) {
       alert("No data to export.");
       return;
     }
-    // Exclude 'Select' and 'Action' columns
     const headersForExport = desiredHeaders.filter(h => h !== "Select" && h !== "Action");
     const dataForSheet = currentFilteredData.map(row => {
       const newRow = {};
@@ -615,6 +679,10 @@ document.addEventListener("DOMContentLoaded", () => {
           newRow[headerKey] = val;
           return;
         }
+        if (headerKey === "Comments") {
+          newRow[headerKey] = row._comment || "";
+          return;
+        }
         const dbKey = columnMapping[headerKey];
         let value = row[dbKey];
         if (value === undefined || value === null || value === "") value = 0;
@@ -627,4 +695,20 @@ document.addEventListener("DOMContentLoaded", () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, "SuggestionsData");
     XLSX.writeFile(workbook, "suggestions_export.xlsx");
   }
+
+  // 18) Handle clicks outside modal to close it
+  if (approvalModal) {
+    approvalModal.addEventListener("click", (e) => {
+      if (e.target === approvalModal) {
+        closeModal();
+      }
+    });
+  }
+
+  // 19) Handle ESC key to close modal
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && approvalModal && approvalModal.style.display === "flex") {
+      closeModal();
+    }
+  });
 });
