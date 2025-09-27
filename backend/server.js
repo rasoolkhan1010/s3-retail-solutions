@@ -172,7 +172,7 @@ app.get("/api/get-all-markets", async (req, res) => {
   }
 });
 
-// Add approved data to history_client table with correct quoting
+// UPDATED: Add approved data to history_client table with comments support
 app.post("/api/add-history", async (req, res) => {
   const {
     Marketid,
@@ -185,15 +185,17 @@ app.post("/api/add-history", async (req, res) => {
     Total_Cost,
     Recommended_Shipping,
     Approved_By,
+    Comments, // NEW: Comments field
   } = req.body;
   const Approved_At = new Date().toISOString();
+  
   try {
     const sql = `
       INSERT INTO history_client (
         marketid, company, itmdesc, cost, "Total_Stock",
         "Original_Recommended_Qty", "Order_Qty", "Total_Cost",
-        "Recommended_Shipping", "Approved_By", approved_at
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        "Recommended_Shipping", "Approved_By", approved_at, comments
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
     `;
     await pool.query(sql, [
       Marketid,
@@ -207,6 +209,7 @@ app.post("/api/add-history", async (req, res) => {
       Recommended_Shipping,
       Approved_By,
       Approved_At,
+      Comments || "", // NEW: Insert comments or empty string if null
     ]);
     res.json({ success: true });
   } catch (err) {
@@ -215,7 +218,7 @@ app.post("/api/add-history", async (req, res) => {
   }
 });
 
-// Get history data filtered by date range and optional filters with endDate inclusive to whole day
+// UPDATED: Get history data with comments support
 app.post("/api/get-history-for-range", async (req, res) => {
   try {
     const { startDate, endDate, marketid } = req.body;
@@ -233,7 +236,8 @@ app.post("/api/get-history-for-range", async (req, res) => {
         "Total_Cost" AS total_cost,
         "Recommended_Shipping" AS recommended_shipping,
         "Approved_By" AS approved_by,
-        approved_at
+        approved_at,
+        comments
       FROM history_client
       WHERE approved_at BETWEEN $1 AND $2
     `;
@@ -257,6 +261,32 @@ app.post("/api/get-history-for-range", async (req, res) => {
   }
 });
 
+// NEW: Database setup endpoint to add comments column if it doesn't exist for clone version
+app.post("/api/setup-comments-column", async (req, res) => {
+  try {
+    // Check if comments column exists in history_client table
+    const checkColumnQuery = `
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name='history_client' 
+      AND column_name='comments';
+    `;
+    
+    const columnExists = await pool.query(checkColumnQuery);
+    
+    if (columnExists.rows.length === 0) {
+      // Add comments column if it doesn't exist
+      await pool.query(`ALTER TABLE history_client ADD COLUMN comments TEXT DEFAULT '';`);
+      console.log("Comments column added to history_client table");
+      res.json({ success: true, message: "Comments column added successfully" });
+    } else {
+      res.json({ success: true, message: "Comments column already exists" });
+    }
+  } catch (err) {
+    console.error("Setup comments column error:", err);
+    res.status(500).json({ message: "Failed to setup comments column.", error: err.message });
+  }
+});
 
 // Root
 app.get("/", (req, res) => res.send("OK - server up"));
