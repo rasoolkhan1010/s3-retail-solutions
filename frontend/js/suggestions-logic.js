@@ -483,7 +483,7 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
           sendBtn.onclick = () => openSendModal([row]);
           td.appendChild(sendBtn);
 
-      } else if (headerKey === "Comments") {
+} else if (headerKey === "Comments") {
   td.style.minWidth = "200px";
   td.style.maxWidth = "250px";
   const textarea = document.createElement("textarea");
@@ -494,33 +494,25 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
   textarea.dataset.key = rowKey;
   textarea.value = row._comment || "";
   
-  // ENHANCED: Better event handling for comments
+  // FIXED: Store reference directly in textarea
+  textarea._rowReference = row;
+  
   textarea.addEventListener("input", (e) => {
-    const rec = fullData.find(r => keyOf(r) === rowKey);
-    if (rec) {
-      rec._comment = e.target.value;
-      console.log(`Comment updated for ${rowKey}: "${e.target.value}"`); // Debug log
-    } else {
-      console.log(`ERROR: Could not find record for ${rowKey}`);
+    // FIXED: Use direct row reference instead of finding by key
+    if (textarea._rowReference) {
+      textarea._rowReference._comment = e.target.value;
+      console.log(`Comment updated: "${e.target.value}"`);
     }
   });
   
-  // ENHANCED: Also save on blur and change events
   textarea.addEventListener("blur", (e) => {
-    const rec = fullData.find(r => keyOf(r) === rowKey);
-    if (rec) {
-      rec._comment = e.target.value;
-    }
-  });
-  
-  textarea.addEventListener("change", (e) => {
-    const rec = fullData.find(r => keyOf(r) === rowKey);
-    if (rec) {
-      rec._comment = e.target.value;
+    if (textarea._rowReference) {
+      textarea._rowReference._comment = e.target.value;
     }
   });
   
   td.appendChild(textarea);
+
 
 
         } else if (headerKey === "recommended shipping") {
@@ -798,6 +790,7 @@ async function sendApproval() {
     }
   });
 });
+
 
 
 
