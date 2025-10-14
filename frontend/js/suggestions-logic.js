@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "recommended shipping": "Recommended Shipping"
   };
   const SHIPPING_OPTIONS = ["No order needed", "Overnight", "2-day shipping", "Ground"];
-  const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`;
+const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z0-9|]/g, '_');
 
   // 6) Setup logout and export
   if (logoutBtn) {
@@ -798,6 +798,7 @@ async function sendApproval() {
     }
   });
 });
+
 
 
 
