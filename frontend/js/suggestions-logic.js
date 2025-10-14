@@ -608,15 +608,39 @@ async function sendApproval() {
     const recommendedQty = Number.isNaN(parseFloat(rqRaw)) ? 0 : parseFloat(rqRaw);
     const neededQty = item._neededQty !== undefined ? parseFloat(item._neededQty) : 0;
     const itemCost = parseFloat(item.cost) || 0;
+    const itemKey = keyOf(item);
     
-    // FIX: Search within visible table body only
-    const visibleTableBody = document.querySelector('#data-table tbody');
-    const sel = visibleTableBody.querySelector(`select.recommended-shipping[data-key="${keyOf(item)}"]`);
-    const shipping = sel ? sel.value : item["Recommended Shipping"] || "No order needed";
+    // FIX 1: Get shipping value - try multiple methods
+    let shipping = item["Recommended Shipping"] || "No order needed";
+    const shippingSelect = tableBody.querySelector(`select.recommended-shipping[data-key="${itemKey}"]`);
+    if (shippingSelect) {
+      shipping = shippingSelect.value;
+    }
     
-    // FIX: Get comment from visible table body only
-    const commentField = visibleTableBody.querySelector(`textarea.comment-field[data-key="${keyOf(item)}"]`);
-    const comments = commentField ? commentField.value : item._comment || "";
+    // FIX 2: Get comment value - try multiple methods with better logic
+    let comments = "";
+    
+    // Method 1: Try to get from DOM first
+    const commentTextarea = tableBody.querySelector(`textarea.comment-field[data-key="${itemKey}"]`);
+    if (commentTextarea) {
+      comments = commentTextarea.value;
+    }
+    
+    // Method 2: Fallback to data object if DOM query fails
+    if (!comments && item._comment) {
+      comments = item._comment;
+    }
+    
+    // Method 3: Last resort - search through all visible textareas
+    if (!comments) {
+      const allTextareas = tableBody.querySelectorAll('textarea.comment-field');
+      for (let textarea of allTextareas) {
+        if (textarea.dataset.key === itemKey) {
+          comments = textarea.value;
+          break;
+        }
+      }
+    }
     
     const totalCost = (neededQty * itemCost).toFixed(2);
     
@@ -635,7 +659,7 @@ async function sendApproval() {
           Total_Cost: totalCost,
           Recommended_Shipping: shipping,
           Approved_By: approver,
-          Comments: comments // Correct comment for each row
+          Comments: comments // Now correctly gets each row's comment
         }),
       });
     } catch (error) {
@@ -652,7 +676,6 @@ async function sendApproval() {
   }
   applyFilters();
 }
-
 
   // 16) Update data count
   function updateDataCount() {
@@ -723,6 +746,7 @@ async function sendApproval() {
     }
   });
 });
+
 
 
 
