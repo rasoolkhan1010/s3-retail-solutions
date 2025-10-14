@@ -592,7 +592,7 @@ document.addEventListener("DOMContentLoaded", () => {
     openSendModal(selectedRowsData);
   }
 
- async function sendApproval() {
+async function sendApproval() {
   if (!dataToSend || dataToSend.length === 0) {
     alert("Error: No data to send.");
     return;
@@ -603,6 +603,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
   
+  console.log("=== DEBUG START ===");
+  console.log("dataToSend:", dataToSend);
+  console.log("tableBody:", tableBody);
+  
   for (const item of dataToSend) {
     const rqRaw = item["Recommended Quntitty"];
     const recommendedQty = Number.isNaN(parseFloat(rqRaw)) ? 0 : parseFloat(rqRaw);
@@ -610,39 +614,85 @@ document.addEventListener("DOMContentLoaded", () => {
     const itemCost = parseFloat(item.cost) || 0;
     const itemKey = keyOf(item);
     
-    // FIX: Get shipping from DOM first, then fallback to data
-    const shippingSelect = tableBody.querySelector(`select.recommended-shipping[data-key="${itemKey}"]`);
-    const shipping = shippingSelect ? shippingSelect.value : item["Recommended Shipping"] || "No order needed";
+    console.log("Processing item:", item.Itmdesc);
+    console.log("Item key:", itemKey);
     
-    // FIX: Get comment from DOM first, then fallback to data object
+    // Debug shipping
+    const shippingSelect = tableBody.querySelector(`select.recommended-shipping[data-key="${itemKey}"]`);
+    console.log("Shipping select found:", !!shippingSelect);
+    const shipping = shippingSelect ? shippingSelect.value : item["Recommended Shipping"] || "No order needed";
+    console.log("Shipping value:", shipping);
+    
+    // Debug comments - MULTIPLE METHODS
+    console.log("--- COMMENT DEBUG ---");
+    
+    // Method 1: Direct querySelector
     const commentTextarea = tableBody.querySelector(`textarea.comment-field[data-key="${itemKey}"]`);
-    const comments = commentTextarea ? commentTextarea.value : item._comment || "";
+    console.log("Method 1 - Textarea found:", !!commentTextarea);
+    if (commentTextarea) {
+      console.log("Method 1 - Textarea value:", `"${commentTextarea.value}"`);
+      console.log("Method 1 - Textarea value length:", commentTextarea.value.length);
+    }
+    
+    // Method 2: Find all textareas and check data-key
+    const allTextareas = tableBody.querySelectorAll('textarea.comment-field');
+    console.log("Method 2 - Total textareas found:", allTextareas.length);
+    let foundByLoop = null;
+    allTextareas.forEach((ta, idx) => {
+      console.log(`Textarea ${idx}: data-key="${ta.dataset.key}", value="${ta.value}"`);
+      if (ta.dataset.key === itemKey) {
+        foundByLoop = ta;
+        console.log(`Method 2 - MATCH found at index ${idx}`);
+      }
+    });
+    
+    // Method 3: Get from data object
+    console.log("Method 3 - item._comment:", `"${item._comment || ""}"`);
+    
+    // Final comment value
+    const comments = commentTextarea ? commentTextarea.value : 
+                     foundByLoop ? foundByLoop.value : 
+                     item._comment || "";
+    
+    console.log("FINAL COMMENT VALUE:", `"${comments}"`);
+    console.log("--- END COMMENT DEBUG ---");
     
     const totalCost = (neededQty * itemCost).toFixed(2);
     
+    const payload = {
+      Marketid: item.Marketid,
+      company: item.company,
+      Itmdesc: item.Itmdesc,
+      cost: item.cost,
+      "Total_Stock": item["Total_Stock"] || 0,
+      Original_Recommended_Qty: recommendedQty,
+      Order_Qty: neededQty,
+      Total_Cost: totalCost,
+      Recommended_Shipping: shipping,
+      Approved_By: approver,
+      Comments: comments
+    };
+    
+    console.log("SENDING PAYLOAD:", payload);
+    
     try {
-      await fetch(`${API_BASE}/api/add-history`, {
+      const response = await fetch(`${API_BASE}/api/add-history`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          Marketid: item.Marketid,
-          company: item.company,
-          Itmdesc: item.Itmdesc,
-          cost: item.cost,
-          "Total_Stock": item["Total_Stock"] || 0,
-          Original_Recommended_Qty: recommendedQty,
-          Order_Qty: neededQty,
-          Total_Cost: totalCost,
-          Recommended_Shipping: shipping,
-          Approved_By: approver,
-          Comments: comments // Now gets the actual DOM value
-        }),
+        body: JSON.stringify(payload),
       });
+      
+      const result = await response.json();
+      console.log("SERVER RESPONSE:", result);
+      
     } catch (error) {
+      console.error("FETCH ERROR:", error);
       alert(`An error occurred while sending item: ${item.Itmdesc}. Process stopped.`);
       return;
     }
   }
+  
+  console.log("=== DEBUG END ===");
   
   alert(`${dataToSend.length} item(s) sent for approval successfully!`);
   closeModal();
@@ -652,6 +702,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   applyFilters();
 }
+
 
 
   // 16) Update data count
@@ -723,5 +774,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
 
 
