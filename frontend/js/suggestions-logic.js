@@ -517,28 +517,33 @@ document.addEventListener("DOMContentLoaded", () => {
           });
           td.appendChild(select);
 
-        } else if (headerKey === "required qty") {
-          const init = row._neededQty !== undefined ? row._neededQty : 0;
-          const input = document.createElement("input");
-          input.type = "number";
-          input.step = "any";
-          input.className = "needed-qty border rounded px-2 py-1 w-full text-xs";
-          input.style.maxWidth = "100px";
-          input.value = init;
-          input.dataset.key = rowKey;
-          input.addEventListener("input", () => {
-            const rec = fullData.find(r => keyOf(r) === rowKey);
-            if (!rec) return;
-            const val = parseFloat(input.value);
-            rec._neededQty = isNaN(val) ? 0 : val;
-            const tc = document.querySelector(`td.total-cost[data-key="${rowKey}"]`);
-            if (tc) {
-              const cst = parseFloat(rec.cost) || 0;
-              const qty = rec._neededQty !== undefined ? rec._neededQty : 0;
-              tc.textContent = (qty * cst).toFixed(2);
-            }
-          });
-          td.appendChild(input);
+ } else if (headerKey === "required qty") {
+  const init = row._neededQty !== undefined ? row._neededQty : 0;
+  const input = document.createElement("input");
+  input.type = "number";
+  input.step = "any";
+  input.className = "needed-qty border rounded px-2 py-1 w-full text-xs";
+  input.style.maxWidth = "100px";
+  input.value = init;
+  input.dataset.key = rowKey;
+  input.addEventListener("input", () => {
+    const rec = fullData.find(r => keyOf(r) === rowKey);
+    if (!rec) return;
+    const val = parseFloat(input.value);
+    rec._neededQty = isNaN(val) ? 0 : val;
+    
+    // FIX: Use the same mechanism as clone - find within current row
+    const currentRow = input.closest('tr');
+    const totalCostCell = currentRow.querySelector('td.total-cost');
+    
+    if (totalCostCell) {
+      const cst = parseFloat(rec.cost) || 0;
+      const qty = rec._neededQty !== undefined ? rec._neededQty : 0;
+      totalCostCell.textContent = (qty * cst).toFixed(2);
+    }
+  });
+  td.appendChild(input);
+
 
         } else if (headerKey === "Total Cost") {
           const need = row._neededQty !== undefined ? row._neededQty : 0;
@@ -712,3 +717,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
