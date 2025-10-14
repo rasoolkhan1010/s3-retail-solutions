@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "recommended shipping": "Recommended Shipping"
   };
   const SHIPPING_OPTIONS = ["No order needed", "Overnight", "2-day shipping", "Ground"];
-const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z0-9|]/g, '_');
+  const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z0-9|]/g, '_');
 
   // 6) Setup logout and export
   if (logoutBtn) {
@@ -125,7 +125,7 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
     if (thead) {
       thead.style.position = "sticky";
       thead.style.top = "0";
-      thead.style.zIndex = "5"; // REDUCED: Lower z-index to prevent modal overlap
+      thead.style.zIndex = "5";
       thead.style.backgroundColor = "#f9fafb";
       thead.style.borderBottom = "2px solid #e5e7eb";
     }
@@ -134,7 +134,6 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
   // 8) Setup Modal with proper z-index
   function setupModalZIndex() {
     if (approvalModal) {
-      // Ensure modal has highest z-index
       approvalModal.style.zIndex = "9999";
       approvalModal.style.position = "fixed";
       approvalModal.style.top = "0";
@@ -143,7 +142,6 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
       approvalModal.style.height = "100%";
       approvalModal.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
       
-      // Find the modal content div and ensure it's properly centered
       const modalContent = approvalModal.querySelector('.modal-content, .bg-white, [class*="modal"]');
       if (modalContent) {
         modalContent.style.position = "relative";
@@ -274,7 +272,7 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
     if (tableContainer) tableContainer.style.display = "block";
 
     setupFixedHeaderTable();
-    setupModalZIndex(); // SETUP MODAL Z-INDEX
+    setupModalZIndex();
 
     if (userRole !== "admin" && marketIdFilter) {
       marketIdFilter.disabled = true;
@@ -318,7 +316,6 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
   function closeModal() {
     if (approvalModal) {
       approvalModal.style.display = "none";
-      // Re-enable body scroll
       document.body.style.overflow = "auto";
     }
   }
@@ -326,7 +323,6 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
   function openModal() {
     if (approvalModal) {
       approvalModal.style.display = "flex";
-      // Prevent body scroll when modal is open
       document.body.style.overflow = "hidden";
     }
   }
@@ -350,6 +346,7 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
       populateSelect(itmdescFilter, items, "All Items");
     }
   }
+
   function populateStaticSelect(selectElement, options) {
     if (!selectElement) return;
     selectElement.innerHTML = "";
@@ -365,6 +362,7 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
       selectElement.appendChild(option);
     }
   }
+
   function populateSelect(selectElement, values, defaultOptionText) {
     if (!selectElement) return;
     const currentVal = selectElement.value;
@@ -381,6 +379,7 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
     });
     selectElement.value = [...selectElement.options].some(opt => opt.value === currentVal) ? currentVal : "ALL";
   }
+
   function applyFilters() {
     if (!marketIdFilter) return;
     const marketQuery = marketIdFilter.value;
@@ -483,37 +482,31 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
           sendBtn.onclick = () => openSendModal([row]);
           td.appendChild(sendBtn);
 
-} else if (headerKey === "Comments") {
-  td.style.minWidth = "200px";
-  td.style.maxWidth = "250px";
-  const textarea = document.createElement("textarea");
-  textarea.className = "comment-field border rounded px-2 py-1 text-xs resize-none";
-  textarea.style.width = "100%";
-  textarea.style.height = "60px";
-  textarea.placeholder = "Add your comments here...";
-  textarea.dataset.key = rowKey;
-  textarea.value = row._comment || "";
-  
-  // FIXED: Store reference directly in textarea
-  textarea._rowReference = row;
-  
-  textarea.addEventListener("input", (e) => {
-    // FIXED: Use direct row reference instead of finding by key
-    if (textarea._rowReference) {
-      textarea._rowReference._comment = e.target.value;
-      console.log(`Comment updated: "${e.target.value}"`);
-    }
-  });
-  
-  textarea.addEventListener("blur", (e) => {
-    if (textarea._rowReference) {
-      textarea._rowReference._comment = e.target.value;
-    }
-  });
-  
-  td.appendChild(textarea);
-
-
+        } else if (headerKey === "Comments") {
+          td.style.minWidth = "200px";
+          td.style.maxWidth = "250px";
+          const textarea = document.createElement("textarea");
+          textarea.className = "comment-field border rounded px-2 py-1 text-xs resize-none";
+          textarea.style.width = "100%";
+          textarea.style.height = "60px";
+          textarea.placeholder = "Add your comments here...";
+          textarea.value = row._comment || "";
+          
+          // SIMPLE: Store by finding the original row in fullData
+          textarea.addEventListener("input", (e) => {
+            // Find the original row and update it directly
+            const originalRow = fullData.find(r => 
+              r.Marketid === row.Marketid && 
+              r.company === row.company && 
+              r.Itmdesc === row.Itmdesc
+            );
+            if (originalRow) {
+              originalRow._comment = e.target.value;
+              console.log(`Comment saved: "${e.target.value}"`);
+            }
+          });
+          
+          td.appendChild(textarea);
 
         } else if (headerKey === "recommended shipping") {
           const select = document.createElement("select");
@@ -533,33 +526,32 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
           });
           td.appendChild(select);
 
-       } else if (headerKey === "required qty") {
-  const init = row._neededQty !== undefined ? row._neededQty : 0;
-  const input = document.createElement("input");
-  input.type = "number";
-  input.step = "any";
-  input.className = "needed-qty border rounded px-2 py-1 w-full text-xs";
-  input.style.maxWidth = "100px";
-  input.value = init;
-  input.dataset.key = rowKey;
-  input.addEventListener("input", () => {
-    const rec = fullData.find(r => keyOf(r) === rowKey);
-    if (!rec) return;
-    const val = parseFloat(input.value);
-    rec._neededQty = isNaN(val) ? 0 : val;
-    
-    // FIXED: Find Total Cost cell in current row only
-    const currentRow = input.closest('tr');
-    const totalCostCell = currentRow.querySelector('td.total-cost');
-    
-    if (totalCostCell) {
-      const cst = parseFloat(rec.cost) || 0;
-      const qty = rec._neededQty !== undefined ? rec._neededQty : 0;
-      totalCostCell.textContent = (qty * cst).toFixed(2);
-    }
-  });
-  td.appendChild(input);
-
+        } else if (headerKey === "required qty") {
+          const init = row._neededQty !== undefined ? row._neededQty : 0;
+          const input = document.createElement("input");
+          input.type = "number";
+          input.step = "any";
+          input.className = "needed-qty border rounded px-2 py-1 w-full text-xs";
+          input.style.maxWidth = "100px";
+          input.value = init;
+          input.dataset.key = rowKey;
+          input.addEventListener("input", () => {
+            const rec = fullData.find(r => keyOf(r) === rowKey);
+            if (!rec) return;
+            const val = parseFloat(input.value);
+            rec._neededQty = isNaN(val) ? 0 : val;
+            
+            // FIXED: Find Total Cost cell in current row only
+            const currentRow = input.closest('tr');
+            const totalCostCell = currentRow.querySelector('td.total-cost');
+            
+            if (totalCostCell) {
+              const cst = parseFloat(rec.cost) || 0;
+              const qty = rec._neededQty !== undefined ? rec._neededQty : 0;
+              totalCostCell.textContent = (qty * cst).toFixed(2);
+            }
+          });
+          td.appendChild(input);
 
         } else if (headerKey === "Total Cost") {
           const need = row._neededQty !== undefined ? row._neededQty : 0;
@@ -585,7 +577,7 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
     });
   }
 
-  // 15) Modal approval flow (UPDATED WITH PROPER MODAL HANDLING)
+  // 15) Modal approval flow
   function openSendModal(items) {
     if (!items || items.length === 0) {
       alert("Please select at least one item to send.");
@@ -594,7 +586,7 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
     dataToSend = items;
     if (modalItemCount) modalItemCount.textContent = items.length;
     if (modalApproverSelect) modalApproverSelect.value = "";
-    openModal(); // Use the proper modal open function
+    openModal();
   }
 
   function handleBulkSend() {
@@ -608,118 +600,68 @@ const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z
     openSendModal(selectedRowsData);
   }
 
-async function sendApproval() {
-  if (!dataToSend || dataToSend.length === 0) {
-    alert("Error: No data to send.");
-    return;
-  }
-  const approver = modalApproverSelect ? modalApproverSelect.value : "";
-  if (!approver) {
-    alert("Please select an approver.");
-    return;
-  }
-  
-  console.log("=== DEBUG START ===");
-  console.log("dataToSend:", dataToSend);
-  console.log("tableBody:", tableBody);
-  
-  for (const item of dataToSend) {
-    const rqRaw = item["Recommended Quntitty"];
-    const recommendedQty = Number.isNaN(parseFloat(rqRaw)) ? 0 : parseFloat(rqRaw);
-    const neededQty = item._neededQty !== undefined ? parseFloat(item._neededQty) : 0;
-    const itemCost = parseFloat(item.cost) || 0;
-    const itemKey = keyOf(item);
-    
-    console.log("Processing item:", item.Itmdesc);
-    console.log("Item key:", itemKey);
-    
-    // Debug shipping
-    const shippingSelect = tableBody.querySelector(`select.recommended-shipping[data-key="${itemKey}"]`);
-    console.log("Shipping select found:", !!shippingSelect);
-    const shipping = shippingSelect ? shippingSelect.value : item["Recommended Shipping"] || "No order needed";
-    console.log("Shipping value:", shipping);
-    
-    // Debug comments - MULTIPLE METHODS
-    console.log("--- COMMENT DEBUG ---");
-    
-    // Method 1: Direct querySelector
-    const commentTextarea = tableBody.querySelector(`textarea.comment-field[data-key="${itemKey}"]`);
-    console.log("Method 1 - Textarea found:", !!commentTextarea);
-    if (commentTextarea) {
-      console.log("Method 1 - Textarea value:", `"${commentTextarea.value}"`);
-      console.log("Method 1 - Textarea value length:", commentTextarea.value.length);
-    }
-    
-    // Method 2: Find all textareas and check data-key
-    const allTextareas = tableBody.querySelectorAll('textarea.comment-field');
-    console.log("Method 2 - Total textareas found:", allTextareas.length);
-    let foundByLoop = null;
-    allTextareas.forEach((ta, idx) => {
-      console.log(`Textarea ${idx}: data-key="${ta.dataset.key}", value="${ta.value}"`);
-      if (ta.dataset.key === itemKey) {
-        foundByLoop = ta;
-        console.log(`Method 2 - MATCH found at index ${idx}`);
-      }
-    });
-    
-    // Method 3: Get from data object
-    console.log("Method 3 - item._comment:", `"${item._comment || ""}"`);
-    
-    // Final comment value
-    const comments = commentTextarea ? commentTextarea.value : 
-                     foundByLoop ? foundByLoop.value : 
-                     item._comment || "";
-    
-    console.log("FINAL COMMENT VALUE:", `"${comments}"`);
-    console.log("--- END COMMENT DEBUG ---");
-    
-    const totalCost = (neededQty * itemCost).toFixed(2);
-    
-    const payload = {
-      Marketid: item.Marketid,
-      company: item.company,
-      Itmdesc: item.Itmdesc,
-      cost: item.cost,
-      "Total_Stock": item["Total_Stock"] || 0,
-      Original_Recommended_Qty: recommendedQty,
-      Order_Qty: neededQty,
-      Total_Cost: totalCost,
-      Recommended_Shipping: shipping,
-      Approved_By: approver,
-      Comments: comments
-    };
-    
-    console.log("SENDING PAYLOAD:", payload);
-    
-    try {
-      const response = await fetch(`${API_BASE}/api/add-history`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      
-      const result = await response.json();
-      console.log("SERVER RESPONSE:", result);
-      
-    } catch (error) {
-      console.error("FETCH ERROR:", error);
-      alert(`An error occurred while sending item: ${item.Itmdesc}. Process stopped.`);
+  // FIXED sendApproval function - gets comments from data object directly
+  async function sendApproval() {
+    if (!dataToSend || dataToSend.length === 0) {
+      alert("Error: No data to send.");
       return;
     }
+    const approver = modalApproverSelect ? modalApproverSelect.value : "";
+    if (!approver) {
+      alert("Please select an approver.");
+      return;
+    }
+    
+    for (const item of dataToSend) {
+      const rqRaw = item["Recommended Quntitty"];
+      const recommendedQty = Number.isNaN(parseFloat(rqRaw)) ? 0 : parseFloat(rqRaw);
+      const neededQty = item._neededQty !== undefined ? parseFloat(item._neededQty) : 0;
+      const itemCost = parseFloat(item.cost) || 0;
+      const itemKey = keyOf(item);
+      
+      // Get shipping
+      const shippingSelect = tableBody.querySelector(`select.recommended-shipping[data-key="${itemKey}"]`);
+      const shipping = shippingSelect ? shippingSelect.value : item["Recommended Shipping"] || "No order needed";
+      
+      // FIXED: Get comments directly from data object (already updated by textarea event)
+      const comments = item._comment || "";
+      
+      console.log(`Sending comment for ${item.Itmdesc}: "${comments}"`);
+      
+      const totalCost = (neededQty * itemCost).toFixed(2);
+      
+      try {
+        await fetch(`${API_BASE}/api/add-history`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            Marketid: item.Marketid,
+            company: item.company,
+            Itmdesc: item.Itmdesc,
+            cost: item.cost,
+            "Total_Stock": item["Total_Stock"] || 0,
+            Original_Recommended_Qty: recommendedQty,
+            Order_Qty: neededQty,
+            Total_Cost: totalCost,
+            Recommended_Shipping: shipping,
+            Approved_By: approver,
+            Comments: comments // This should now work!
+          }),
+        });
+      } catch (error) {
+        alert(`An error occurred while sending item: ${item.Itmdesc}. Process stopped.`);
+        return;
+      }
+    }
+    
+    alert(`${dataToSend.length} item(s) sent for approval successfully!`);
+    closeModal();
+    dataToSend = [];
+    if (tableBody) {
+      tableBody.querySelectorAll("input.row-checkbox:checked").forEach(cb => (cb.checked = false));
+    }
+    applyFilters();
   }
-  
-  console.log("=== DEBUG END ===");
-  
-  alert(`${dataToSend.length} item(s) sent for approval successfully!`);
-  closeModal();
-  dataToSend = [];
-  if (tableBody) {
-    tableBody.querySelectorAll("input.row-checkbox:checked").forEach(cb => (cb.checked = false));
-  }
-  applyFilters();
-}
-
-
 
   // 16) Update data count
   function updateDataCount() {
@@ -731,7 +673,7 @@ async function sendApproval() {
       : "No data to display";
   }
 
-  // 17) Export to Excel (UPDATED WITH COMMENTS)
+  // 17) Export to Excel
   function exportToExcel() {
     if (!currentFilteredData || currentFilteredData.length === 0) {
       alert("No data to export.");
@@ -790,9 +732,3 @@ async function sendApproval() {
     }
   });
 });
-
-
-
-
-
-
