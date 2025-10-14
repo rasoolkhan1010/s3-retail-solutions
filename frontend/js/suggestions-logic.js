@@ -592,61 +592,66 @@ document.addEventListener("DOMContentLoaded", () => {
     openSendModal(selectedRowsData);
   }
 
-  async function sendApproval() {
-    if (!dataToSend || dataToSend.length === 0) {
-      alert("Error: No data to send.");
-      return;
-    }
-    const approver = modalApproverSelect ? modalApproverSelect.value : "";
-    if (!approver) {
-      alert("Please select an approver.");
-      return;
-    }
-    
-    for (const item of dataToSend) {
-      const rqRaw = item["Recommended Quntitty"];
-      const recommendedQty = Number.isNaN(parseFloat(rqRaw)) ? 0 : parseFloat(rqRaw);
-      const neededQty = item._neededQty !== undefined ? parseFloat(item._neededQty) : 0;
-      const itemCost = parseFloat(item.cost) || 0;
-      const sel = document.querySelector(`select.recommended-shipping[data-key="${keyOf(item)}"]`);
-      const shipping = sel ? sel.value : item["Recommended Shipping"] || "No order needed";
-      const totalCost = (neededQty * itemCost).toFixed(2);
-      
-      // Get the comment for this item
-      const comments = item._comment || "";
-      
-      try {
-        await fetch(`${API_BASE}/api/add-history`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            Marketid: item.Marketid,
-            company: item.company,
-            Itmdesc: item.Itmdesc,
-            cost: item.cost,
-            "Total_Stock": item["Total_Stock"] || 0,
-            Original_Recommended_Qty: recommendedQty,
-            Order_Qty: neededQty,
-            Total_Cost: totalCost,
-            Recommended_Shipping: shipping,
-            Approved_By: approver,
-            Comments: comments // Send comments to backend
-          }),
-        });
-      } catch (error) {
-        alert(`An error occurred while sending item: ${item.Itmdesc}. Process stopped.`);
-        return;
-      }
-    }
-    
-    alert(`${dataToSend.length} item(s) sent for approval successfully!`);
-    closeModal(); // Use proper modal close function
-    dataToSend = [];
-    if (tableBody) {
-      tableBody.querySelectorAll("input.row-checkbox:checked").forEach(cb => (cb.checked = false));
-    }
-    applyFilters();
+async function sendApproval() {
+  if (!dataToSend || dataToSend.length === 0) {
+    alert("Error: No data to send.");
+    return;
   }
+  const approver = modalApproverSelect ? modalApproverSelect.value : "";
+  if (!approver) {
+    alert("Please select an approver.");
+    return;
+  }
+  
+  for (const item of dataToSend) {
+    const rqRaw = item["Recommended Quntitty"];
+    const recommendedQty = Number.isNaN(parseFloat(rqRaw)) ? 0 : parseFloat(rqRaw);
+    const neededQty = item._neededQty !== undefined ? parseFloat(item._neededQty) : 0;
+    const itemCost = parseFloat(item.cost) || 0;
+    
+    // FIX: Search within tableBody instead of entire document
+    const sel = tableBody.querySelector(`select.recommended-shipping[data-key="${keyOf(item)}"]`);
+    const shipping = sel ? sel.value : item["Recommended Shipping"] || "No order needed";
+    
+    // FIX: Search for comments within tableBody instead of entire document  
+    const commentField = tableBody.querySelector(`textarea.comment-field[data-key="${keyOf(item)}"]`);
+    const comments = commentField ? commentField.value : item._comment || "";
+    
+    const totalCost = (neededQty * itemCost).toFixed(2);
+    
+    try {
+      await fetch(`${API_BASE}/api/add-history`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          Marketid: item.Marketid,
+          company: item.company,
+          Itmdesc: item.Itmdesc,
+          cost: item.cost,
+          "Total_Stock": item["Total_Stock"] || 0,
+          Original_Recommended_Qty: recommendedQty,
+          Order_Qty: neededQty,
+          Total_Cost: totalCost,
+          Recommended_Shipping: shipping,
+          Approved_By: approver,
+          Comments: comments // Now gets the correct comment for each row
+        }),
+      });
+    } catch (error) {
+      alert(`An error occurred while sending item: ${item.Itmdesc}. Process stopped.`);
+      return;
+    }
+  }
+  
+  alert(`${dataToSend.length} item(s) sent for approval successfully!`);
+  closeModal();
+  dataToSend = [];
+  if (tableBody) {
+    tableBody.querySelectorAll("input.row-checkbox:checked").forEach(cb => (cb.checked = false));
+  }
+  applyFilters();
+}
+
 
   // 16) Update data count
   function updateDataCount() {
@@ -717,4 +722,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
 
