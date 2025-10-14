@@ -483,21 +483,45 @@ document.addEventListener("DOMContentLoaded", () => {
           sendBtn.onclick = () => openSendModal([row]);
           td.appendChild(sendBtn);
 
-        } else if (headerKey === "Comments") {
-          td.style.minWidth = "200px";
-          td.style.maxWidth = "250px";
-          const textarea = document.createElement("textarea");
-          textarea.className = "comment-field border rounded px-2 py-1 text-xs resize-none";
-          textarea.style.width = "100%";
-          textarea.style.height = "60px";
-          textarea.placeholder = "Add your comments here...";
-          textarea.dataset.key = rowKey;
-          textarea.value = row._comment || "";
-          textarea.addEventListener("input", () => {
-            const rec = fullData.find(r => keyOf(r) === rowKey);
-            if (rec) rec._comment = textarea.value;
-          });
-          td.appendChild(textarea);
+      } else if (headerKey === "Comments") {
+  td.style.minWidth = "200px";
+  td.style.maxWidth = "250px";
+  const textarea = document.createElement("textarea");
+  textarea.className = "comment-field border rounded px-2 py-1 text-xs resize-none";
+  textarea.style.width = "100%";
+  textarea.style.height = "60px";
+  textarea.placeholder = "Add your comments here...";
+  textarea.dataset.key = rowKey;
+  textarea.value = row._comment || "";
+  
+  // ENHANCED: Better event handling for comments
+  textarea.addEventListener("input", (e) => {
+    const rec = fullData.find(r => keyOf(r) === rowKey);
+    if (rec) {
+      rec._comment = e.target.value;
+      console.log(`Comment updated for ${rowKey}: "${e.target.value}"`); // Debug log
+    } else {
+      console.log(`ERROR: Could not find record for ${rowKey}`);
+    }
+  });
+  
+  // ENHANCED: Also save on blur and change events
+  textarea.addEventListener("blur", (e) => {
+    const rec = fullData.find(r => keyOf(r) === rowKey);
+    if (rec) {
+      rec._comment = e.target.value;
+    }
+  });
+  
+  textarea.addEventListener("change", (e) => {
+    const rec = fullData.find(r => keyOf(r) === rowKey);
+    if (rec) {
+      rec._comment = e.target.value;
+    }
+  });
+  
+  td.appendChild(textarea);
+
 
         } else if (headerKey === "recommended shipping") {
           const select = document.createElement("select");
@@ -774,6 +798,7 @@ async function sendApproval() {
     }
   });
 });
+
 
 
 
