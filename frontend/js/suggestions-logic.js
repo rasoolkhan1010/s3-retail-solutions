@@ -2,6 +2,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // 0) Backend base URL
   const API_BASE = (window.CONFIG && window.CONFIG.API_BASE) || "https://s3-retail-solutions-backend.onrender.com";
 
+
+
   // 1) Security/session check
   const userRole = sessionStorage.getItem("userRole");
   let sd = sessionStorage.getItem("startDate");
@@ -70,9 +72,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let dataToSend = [];
   const rowsPerPage = 1000;
   let currentPage = 1;
-  
-  // BULLETPROOF COMMENTS STORAGE
-  let globalComments = {};
 
   // 5) Headers and column mapping (UPDATED WITH COMMENTS)
   const desiredHeaders = [
@@ -93,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "recommended shipping": "Recommended Shipping"
   };
   const SHIPPING_OPTIONS = ["No order needed", "Overnight", "2-day shipping", "Ground"];
-  const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z0-9|]/g, '_');
+  const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`;
 
   // 6) Setup logout and export
   if (logoutBtn) {
@@ -494,19 +493,12 @@ document.addEventListener("DOMContentLoaded", () => {
           textarea.style.width = "100%";
           textarea.style.height = "60px";
           textarea.placeholder = "Add your comments here...";
-          
-          // BULLETPROOF: Create unique ID for this row
-          const uniqueId = `${row.Marketid}_${row.company}_${row.Itmdesc}`;
-          
-          // Set initial value from global storage
-          textarea.value = globalComments[uniqueId] || "";
-          
-          // Save to global storage on input
-          textarea.addEventListener("input", (e) => {
-            globalComments[uniqueId] = e.target.value;
-            console.log(`Comment saved for ${uniqueId}: "${e.target.value}"`);
+          textarea.dataset.key = rowKey;
+          textarea.value = row._comment || "";
+          textarea.addEventListener("input", () => {
+            const rec = fullData.find(r => keyOf(r) === rowKey);
+            if (rec) rec._comment = textarea.value;
           });
-          
           td.appendChild(textarea);
 
         } else if (headerKey === "recommended shipping") {
@@ -527,33 +519,28 @@ document.addEventListener("DOMContentLoaded", () => {
           });
           td.appendChild(select);
 
-       } else if (headerKey === "required qty") {
-  const init = row._neededQty !== undefined ? row._neededQty : 0;
-  const input = document.createElement("input");
-  input.type = "number";
-  input.step = "any";
-  input.className = "needed-qty border rounded px-2 py-1 w-full text-xs";
-  input.style.maxWidth = "100px";
-  input.value = init;
-  input.dataset.key = rowKey;
-  input.addEventListener("input", () => {
-    const rec = fullData.find(r => keyOf(r) === rowKey);
-    if (!rec) return;
-    const val = parseFloat(input.value);
-    rec._neededQty = isNaN(val) ? 0 : val;
-    
-    // FIXED: Find Total Cost cell in current row only
-    const currentRow = input.closest('tr');
-    const totalCostCell = currentRow.querySelector('td.total-cost');
-    
-    if (totalCostCell) {
-      const cst = parseFloat(rec.cost) || 0;
-      const qty = rec._neededQty !== undefined ? rec._neededQty : 0;
-      totalCostCell.textContent = (qty * cst).toFixed(2);
-    }
-  });
-  td.appendChild(input);
-
+        } else if (headerKey === "required qty") {
+          const init = row._neededQty !== undefined ? row._neededQty : 0;
+          const input = document.createElement("input");
+          input.type = "number";
+          input.step = "any";
+          input.className = "needed-qty border rounded px-2 py-1 w-full text-xs";
+          input.style.maxWidth = "100px";
+          input.value = init;
+          input.dataset.key = rowKey;
+          input.addEventListener("input", () => {
+            const rec = fullData.find(r => keyOf(r) === rowKey);
+            if (!rec) return;
+            const val = parseFloat(input.value);
+            rec._neededQty = isNaN(val) ? 0 : val;
+            const tc = document.querySelector(`td.total-cost[data-key="${rowKey}"]`);
+            if (tc) {
+              const cst = parseFloat(rec.cost) || 0;
+              const qty = rec._neededQty !== undefined ? rec._neededQty : 0;
+              tc.textContent = (qty * cst).toFixed(2);
+            }
+          });
+          td.appendChild(input);
 
         } else if (headerKey === "Total Cost") {
           const need = row._neededQty !== undefined ? row._neededQty : 0;
@@ -602,7 +589,6 @@ document.addEventListener("DOMContentLoaded", () => {
     openSendModal(selectedRowsData);
   }
 
-  // FIXED sendApproval function with BULLETPROOF comments
   async function sendApproval() {
     if (!dataToSend || dataToSend.length === 0) {
       alert("Error: No data to send.");
@@ -619,19 +605,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const recommendedQty = Number.isNaN(parseFloat(rqRaw)) ? 0 : parseFloat(rqRaw);
       const neededQty = item._neededQty !== undefined ? parseFloat(item._neededQty) : 0;
       const itemCost = parseFloat(item.cost) || 0;
-      const itemKey = keyOf(item);
-      
-      // Get shipping
-      const shippingSelect = tableBody.querySelector(`select.recommended-shipping[data-key="${itemKey}"]`);
-      const shipping = shippingSelect ? shippingSelect.value : item["Recommended Shipping"] || "No order needed";
-      
-      // BULLETPROOF: Get comments from global storage
-      const uniqueId = `${item.Marketid}_${item.company}_${item.Itmdesc}`;
-      const comments = globalComments[uniqueId] || "";
-      
-      console.log(`Sending comment for ${item.Itmdesc}: "${comments}"`);
-      
+      const sel = document.querySelector(`select.recommended-shipping[data-key="${keyOf(item)}"]`);
+      const shipping = sel ? sel.value : item["Recommended Shipping"] || "No order needed";
       const totalCost = (neededQty * itemCost).toFixed(2);
+      
+      // Get the comment for this item
+      const comments = item._comment || "";
       
       try {
         await fetch(`${API_BASE}/api/add-history`, {
@@ -648,7 +627,7 @@ document.addEventListener("DOMContentLoaded", () => {
             Total_Cost: totalCost,
             Recommended_Shipping: shipping,
             Approved_By: approver,
-            Comments: comments // This WILL work now!
+            Comments: comments // Send comments to backend
           }),
         });
       } catch (error) {
@@ -658,7 +637,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     alert(`${dataToSend.length} item(s) sent for approval successfully!`);
-    closeModal();
+    closeModal(); // Use proper modal close function
     dataToSend = [];
     if (tableBody) {
       tableBody.querySelectorAll("input.row-checkbox:checked").forEach(cb => (cb.checked = false));
@@ -703,9 +682,7 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
         if (headerKey === "Comments") {
-          // BULLETPROOF: Get comments from global storage for export
-          const uniqueId = `${row.Marketid}_${row.company}_${row.Itmdesc}`;
-          newRow[headerKey] = globalComments[uniqueId] || "";
+          newRow[headerKey] = row._comment || "";
           return;
         }
         const dbKey = columnMapping[headerKey];
