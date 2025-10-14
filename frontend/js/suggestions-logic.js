@@ -2,6 +2,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // 0) Backend base URL
   const API_BASE = (window.CONFIG && window.CONFIG.API_BASE) || "https://s3-retail-solutions-backend.onrender.com";
 
+
+
   // 1) Security/session check
   const userRole = sessionStorage.getItem("userRole");
   let sd = sessionStorage.getItem("startDate");
