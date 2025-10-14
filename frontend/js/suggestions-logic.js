@@ -517,7 +517,7 @@ document.addEventListener("DOMContentLoaded", () => {
           });
           td.appendChild(select);
 
- } else if (headerKey === "required qty") {
+} else if (headerKey === "required qty") {
   const init = row._neededQty !== undefined ? row._neededQty : 0;
   const input = document.createElement("input");
   input.type = "number";
@@ -532,7 +532,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const val = parseFloat(input.value);
     rec._neededQty = isNaN(val) ? 0 : val;
     
-    // FIX: Use the same mechanism as clone - find within current row
+    // FIXED: Find Total Cost cell in current row only
     const currentRow = input.closest('tr');
     const totalCostCell = currentRow.querySelector('td.total-cost');
     
@@ -592,90 +592,61 @@ document.addEventListener("DOMContentLoaded", () => {
     openSendModal(selectedRowsData);
   }
 
-async function sendApproval() {
-  if (!dataToSend || dataToSend.length === 0) {
-    alert("Error: No data to send.");
-    return;
-  }
-  const approver = modalApproverSelect ? modalApproverSelect.value : "";
-  if (!approver) {
-    alert("Please select an approver.");
-    return;
-  }
-  
-  for (const item of dataToSend) {
-    const rqRaw = item["Recommended Quntitty"];
-    const recommendedQty = Number.isNaN(parseFloat(rqRaw)) ? 0 : parseFloat(rqRaw);
-    const neededQty = item._neededQty !== undefined ? parseFloat(item._neededQty) : 0;
-    const itemCost = parseFloat(item.cost) || 0;
-    const itemKey = keyOf(item);
-    
-    // FIX 1: Get shipping value - try multiple methods
-    let shipping = item["Recommended Shipping"] || "No order needed";
-    const shippingSelect = tableBody.querySelector(`select.recommended-shipping[data-key="${itemKey}"]`);
-    if (shippingSelect) {
-      shipping = shippingSelect.value;
+  async function sendApproval() {
+    if (!dataToSend || dataToSend.length === 0) {
+      alert("Error: No data to send.");
+      return;
+    }
+    const approver = modalApproverSelect ? modalApproverSelect.value : "";
+    if (!approver) {
+      alert("Please select an approver.");
+      return;
     }
     
-    // FIX 2: Get comment value - try multiple methods with better logic
-    let comments = "";
-    
-    // Method 1: Try to get from DOM first
-    const commentTextarea = tableBody.querySelector(`textarea.comment-field[data-key="${itemKey}"]`);
-    if (commentTextarea) {
-      comments = commentTextarea.value;
-    }
-    
-    // Method 2: Fallback to data object if DOM query fails
-    if (!comments && item._comment) {
-      comments = item._comment;
-    }
-    
-    // Method 3: Last resort - search through all visible textareas
-    if (!comments) {
-      const allTextareas = tableBody.querySelectorAll('textarea.comment-field');
-      for (let textarea of allTextareas) {
-        if (textarea.dataset.key === itemKey) {
-          comments = textarea.value;
-          break;
-        }
+    for (const item of dataToSend) {
+      const rqRaw = item["Recommended Quntitty"];
+      const recommendedQty = Number.isNaN(parseFloat(rqRaw)) ? 0 : parseFloat(rqRaw);
+      const neededQty = item._neededQty !== undefined ? parseFloat(item._neededQty) : 0;
+      const itemCost = parseFloat(item.cost) || 0;
+      const sel = document.querySelector(`select.recommended-shipping[data-key="${keyOf(item)}"]`);
+      const shipping = sel ? sel.value : item["Recommended Shipping"] || "No order needed";
+      const totalCost = (neededQty * itemCost).toFixed(2);
+      
+      // Get the comment for this item
+      const comments = item._comment || "";
+      
+      try {
+        await fetch(`${API_BASE}/api/add-history`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            Marketid: item.Marketid,
+            company: item.company,
+            Itmdesc: item.Itmdesc,
+            cost: item.cost,
+            "Total_Stock": item["Total_Stock"] || 0,
+            Original_Recommended_Qty: recommendedQty,
+            Order_Qty: neededQty,
+            Total_Cost: totalCost,
+            Recommended_Shipping: shipping,
+            Approved_By: approver,
+            Comments: comments // Send comments to backend
+          }),
+        });
+      } catch (error) {
+        alert(`An error occurred while sending item: ${item.Itmdesc}. Process stopped.`);
+        return;
       }
     }
     
-    const totalCost = (neededQty * itemCost).toFixed(2);
-    
-    try {
-      await fetch(`${API_BASE}/api/add-history`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          Marketid: item.Marketid,
-          company: item.company,
-          Itmdesc: item.Itmdesc,
-          cost: item.cost,
-          "Total_Stock": item["Total_Stock"] || 0,
-          Original_Recommended_Qty: recommendedQty,
-          Order_Qty: neededQty,
-          Total_Cost: totalCost,
-          Recommended_Shipping: shipping,
-          Approved_By: approver,
-          Comments: comments // Now correctly gets each row's comment
-        }),
-      });
-    } catch (error) {
-      alert(`An error occurred while sending item: ${item.Itmdesc}. Process stopped.`);
-      return;
+    alert(`${dataToSend.length} item(s) sent for approval successfully!`);
+    closeModal(); // Use proper modal close function
+    dataToSend = [];
+    if (tableBody) {
+      tableBody.querySelectorAll("input.row-checkbox:checked").forEach(cb => (cb.checked = false));
     }
+    applyFilters();
   }
-  
-  alert(`${dataToSend.length} item(s) sent for approval successfully!`);
-  closeModal();
-  dataToSend = [];
-  if (tableBody) {
-    tableBody.querySelectorAll("input.row-checkbox:checked").forEach(cb => (cb.checked = false));
-  }
-  applyFilters();
-}
 
   // 16) Update data count
   function updateDataCount() {
@@ -746,8 +717,3 @@ async function sendApproval() {
     }
   });
 });
-
-
-
-
-
