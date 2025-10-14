@@ -609,13 +609,31 @@ async function sendApproval() {
     const neededQty = item._neededQty !== undefined ? parseFloat(item._neededQty) : 0;
     const itemCost = parseFloat(item.cost) || 0;
     
-    // FIX: Search within tableBody instead of entire document
-    const sel = tableBody.querySelector(`select.recommended-shipping[data-key="${keyOf(item)}"]`);
-    const shipping = sel ? sel.value : item["Recommended Shipping"] || "No order needed";
+    // FIX: Get the correct shipping value for THIS specific row
+    const shippingElements = document.querySelectorAll(`select.recommended-shipping[data-key="${keyOf(item)}"]`);
+    let shipping = item["Recommended Shipping"] || "No order needed";
+    if (shippingElements.length > 0) {
+      // Find the one that's actually visible in the current table
+      for (let elem of shippingElements) {
+        if (elem.offsetParent !== null) { // Check if element is visible
+          shipping = elem.value;
+          break;
+        }
+      }
+    }
     
-    // FIX: Search for comments within tableBody instead of entire document  
-    const commentField = tableBody.querySelector(`textarea.comment-field[data-key="${keyOf(item)}"]`);
-    const comments = commentField ? commentField.value : item._comment || "";
+    // FIX: Get the correct comment value for THIS specific row
+    const commentElements = document.querySelectorAll(`textarea.comment-field[data-key="${keyOf(item)}"]`);
+    let comments = item._comment || "";
+    if (commentElements.length > 0) {
+      // Find the one that's actually visible in the current table
+      for (let elem of commentElements) {
+        if (elem.offsetParent !== null) { // Check if element is visible
+          comments = elem.value;
+          break;
+        }
+      }
+    }
     
     const totalCost = (neededQty * itemCost).toFixed(2);
     
@@ -634,7 +652,7 @@ async function sendApproval() {
           Total_Cost: totalCost,
           Recommended_Shipping: shipping,
           Approved_By: approver,
-          Comments: comments // Now gets the correct comment for each row
+          Comments: comments // Now gets the correct comment for each specific row
         }),
       });
     } catch (error) {
@@ -722,5 +740,6 @@ async function sendApproval() {
     }
   });
 });
+
 
 
