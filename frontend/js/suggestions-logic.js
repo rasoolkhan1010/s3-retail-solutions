@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "recommended shipping": "Recommended Shipping"
   };
   const SHIPPING_OPTIONS = ["No order needed", "Overnight", "2-day shipping", "Ground"];
-  const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`.replace(/[^a-zA-Z0-9|]/g, '_');
+  const keyOf = r => `${r.Marketid}||${r.company}||${r.Itmdesc}`;
 
   // 6) Setup logout and export
   if (logoutBtn) {
@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (thead) {
       thead.style.position = "sticky";
       thead.style.top = "0";
-      thead.style.zIndex = "5";
+      thead.style.zIndex = "5"; // REDUCED: Lower z-index to prevent modal overlap
       thead.style.backgroundColor = "#f9fafb";
       thead.style.borderBottom = "2px solid #e5e7eb";
     }
@@ -134,6 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 8) Setup Modal with proper z-index
   function setupModalZIndex() {
     if (approvalModal) {
+      // Ensure modal has highest z-index
       approvalModal.style.zIndex = "9999";
       approvalModal.style.position = "fixed";
       approvalModal.style.top = "0";
@@ -142,6 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
       approvalModal.style.height = "100%";
       approvalModal.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
       
+      // Find the modal content div and ensure it's properly centered
       const modalContent = approvalModal.querySelector('.modal-content, .bg-white, [class*="modal"]');
       if (modalContent) {
         modalContent.style.position = "relative";
@@ -272,7 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (tableContainer) tableContainer.style.display = "block";
 
     setupFixedHeaderTable();
-    setupModalZIndex();
+    setupModalZIndex(); // SETUP MODAL Z-INDEX
 
     if (userRole !== "admin" && marketIdFilter) {
       marketIdFilter.disabled = true;
@@ -316,6 +318,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function closeModal() {
     if (approvalModal) {
       approvalModal.style.display = "none";
+      // Re-enable body scroll
       document.body.style.overflow = "auto";
     }
   }
@@ -323,6 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function openModal() {
     if (approvalModal) {
       approvalModal.style.display = "flex";
+      // Prevent body scroll when modal is open
       document.body.style.overflow = "hidden";
     }
   }
@@ -346,7 +350,6 @@ document.addEventListener("DOMContentLoaded", () => {
       populateSelect(itmdescFilter, items, "All Items");
     }
   }
-
   function populateStaticSelect(selectElement, options) {
     if (!selectElement) return;
     selectElement.innerHTML = "";
@@ -362,7 +365,6 @@ document.addEventListener("DOMContentLoaded", () => {
       selectElement.appendChild(option);
     }
   }
-
   function populateSelect(selectElement, values, defaultOptionText) {
     if (!selectElement) return;
     const currentVal = selectElement.value;
@@ -379,7 +381,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     selectElement.value = [...selectElement.options].some(opt => opt.value === currentVal) ? currentVal : "ALL";
   }
-
   function applyFilters() {
     if (!marketIdFilter) return;
     const marketQuery = marketIdFilter.value;
@@ -490,22 +491,12 @@ document.addEventListener("DOMContentLoaded", () => {
           textarea.style.width = "100%";
           textarea.style.height = "60px";
           textarea.placeholder = "Add your comments here...";
+          textarea.dataset.key = rowKey;
           textarea.value = row._comment || "";
-          
-          // SIMPLE: Store by finding the original row in fullData
-          textarea.addEventListener("input", (e) => {
-            // Find the original row and update it directly
-            const originalRow = fullData.find(r => 
-              r.Marketid === row.Marketid && 
-              r.company === row.company && 
-              r.Itmdesc === row.Itmdesc
-            );
-            if (originalRow) {
-              originalRow._comment = e.target.value;
-              console.log(`Comment saved: "${e.target.value}"`);
-            }
+          textarea.addEventListener("input", () => {
+            const rec = fullData.find(r => keyOf(r) === rowKey);
+            if (rec) rec._comment = textarea.value;
           });
-          
           td.appendChild(textarea);
 
         } else if (headerKey === "recommended shipping") {
@@ -540,15 +531,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!rec) return;
             const val = parseFloat(input.value);
             rec._neededQty = isNaN(val) ? 0 : val;
-            
-            // FIXED: Find Total Cost cell in current row only
-            const currentRow = input.closest('tr');
-            const totalCostCell = currentRow.querySelector('td.total-cost');
-            
-            if (totalCostCell) {
+            const tc = document.querySelector(`td.total-cost[data-key="${rowKey}"]`);
+            if (tc) {
               const cst = parseFloat(rec.cost) || 0;
               const qty = rec._neededQty !== undefined ? rec._neededQty : 0;
-              totalCostCell.textContent = (qty * cst).toFixed(2);
+              tc.textContent = (qty * cst).toFixed(2);
             }
           });
           td.appendChild(input);
@@ -577,7 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 15) Modal approval flow
+  // 15) Modal approval flow (UPDATED WITH PROPER MODAL HANDLING)
   function openSendModal(items) {
     if (!items || items.length === 0) {
       alert("Please select at least one item to send.");
@@ -586,7 +573,7 @@ document.addEventListener("DOMContentLoaded", () => {
     dataToSend = items;
     if (modalItemCount) modalItemCount.textContent = items.length;
     if (modalApproverSelect) modalApproverSelect.value = "";
-    openModal();
+    openModal(); // Use the proper modal open function
   }
 
   function handleBulkSend() {
@@ -600,7 +587,6 @@ document.addEventListener("DOMContentLoaded", () => {
     openSendModal(selectedRowsData);
   }
 
-  // FIXED sendApproval function - gets comments from data object directly
   async function sendApproval() {
     if (!dataToSend || dataToSend.length === 0) {
       alert("Error: No data to send.");
@@ -617,18 +603,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const recommendedQty = Number.isNaN(parseFloat(rqRaw)) ? 0 : parseFloat(rqRaw);
       const neededQty = item._neededQty !== undefined ? parseFloat(item._neededQty) : 0;
       const itemCost = parseFloat(item.cost) || 0;
-      const itemKey = keyOf(item);
-      
-      // Get shipping
-      const shippingSelect = tableBody.querySelector(`select.recommended-shipping[data-key="${itemKey}"]`);
-      const shipping = shippingSelect ? shippingSelect.value : item["Recommended Shipping"] || "No order needed";
-      
-      // FIXED: Get comments directly from data object (already updated by textarea event)
-      const comments = item._comment || "";
-      
-      console.log(`Sending comment for ${item.Itmdesc}: "${comments}"`);
-      
+      const sel = document.querySelector(`select.recommended-shipping[data-key="${keyOf(item)}"]`);
+      const shipping = sel ? sel.value : item["Recommended Shipping"] || "No order needed";
       const totalCost = (neededQty * itemCost).toFixed(2);
+      
+      // Get the comment for this item
+      const comments = item._comment || "";
       
       try {
         await fetch(`${API_BASE}/api/add-history`, {
@@ -645,7 +625,7 @@ document.addEventListener("DOMContentLoaded", () => {
             Total_Cost: totalCost,
             Recommended_Shipping: shipping,
             Approved_By: approver,
-            Comments: comments // This should now work!
+            Comments: comments // Send comments to backend
           }),
         });
       } catch (error) {
@@ -655,7 +635,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     alert(`${dataToSend.length} item(s) sent for approval successfully!`);
-    closeModal();
+    closeModal(); // Use proper modal close function
     dataToSend = [];
     if (tableBody) {
       tableBody.querySelectorAll("input.row-checkbox:checked").forEach(cb => (cb.checked = false));
@@ -673,7 +653,7 @@ document.addEventListener("DOMContentLoaded", () => {
       : "No data to display";
   }
 
-  // 17) Export to Excel
+  // 17) Export to Excel (UPDATED WITH COMMENTS)
   function exportToExcel() {
     if (!currentFilteredData || currentFilteredData.length === 0) {
       alert("No data to export.");
