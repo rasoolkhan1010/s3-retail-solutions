@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   // 0) Backend base URL
-  const API_BASE = (window.CONFIG && window.CONFIG.API_BASE) || "https://iasr-s3-2.onrender.com";
+  const API_BASE = (window.CONFIG && window.CONFIG.API_BASE) || "https://s3-retail-solutions.onrender.com";
 
   // 1) Security/session check
   const userRole = sessionStorage.getItem("userRole");
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const rowsPerPage = 1000;
   let currentPage = 1;
 
-  // 5) Headers and column mapping
+  // 5) Headers and column mapping (UPDATED WITH COMMENTS)
   const desiredHeaders = [
     "Select", "Market-id", "company", "Itmdesc", "Cost",
     "Total_Stock", "30_days", "W3",
@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (thead) {
       thead.style.position = "sticky";
       thead.style.top = "0";
-      thead.style.zIndex = "5";
+      thead.style.zIndex = "5"; // REDUCED: Lower z-index to prevent modal overlap
       thead.style.backgroundColor = "#f9fafb";
       thead.style.borderBottom = "2px solid #e5e7eb";
     }
@@ -134,6 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 8) Setup Modal with proper z-index
   function setupModalZIndex() {
     if (approvalModal) {
+      // Ensure modal has highest z-index
       approvalModal.style.zIndex = "9999";
       approvalModal.style.position = "fixed";
       approvalModal.style.top = "0";
@@ -142,6 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
       approvalModal.style.height = "100%";
       approvalModal.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
       
+      // Find the modal content div and ensure it's properly centered
       const modalContent = approvalModal.querySelector('.modal-content, .bg-white, [class*="modal"]');
       if (modalContent) {
         modalContent.style.position = "relative";
@@ -248,7 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return {
           ...r,
           ["Recommended Quntitty"]: raw === undefined || raw === null || raw === "" || Number.isNaN(num) ? "0" : String(num),
-          _comment: ""
+          _comment: "" // Initialize comment field
         };
       });
       fullData.sort((a, b) => new Date(b.Date) - new Date(a.Date));
@@ -272,7 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (tableContainer) tableContainer.style.display = "block";
 
     setupFixedHeaderTable();
-    setupModalZIndex();
+    setupModalZIndex(); // SETUP MODAL Z-INDEX
 
     if (userRole !== "admin" && marketIdFilter) {
       marketIdFilter.disabled = true;
@@ -306,16 +308,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dateFilter) dateFilter.addEventListener("change", applyFilters);
     if (quantityFilter) quantityFilter.addEventListener("change", applyFilters);
 
-    // Modal event listeners
+    // Modal event listeners with body scroll prevention
     if (modalCancelBtn) modalCancelBtn.addEventListener("click", closeModal);
     if (modalOkayBtn) modalOkayBtn.addEventListener("click", sendApproval);
     if (sendSelectedBtn) sendSelectedBtn.addEventListener("click", handleBulkSend);
   }
 
-  // 12) Modal functions
+  // 12) Modal functions with scroll prevention
   function closeModal() {
     if (approvalModal) {
       approvalModal.style.display = "none";
+      // Re-enable body scroll
       document.body.style.overflow = "auto";
     }
   }
@@ -323,6 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function openModal() {
     if (approvalModal) {
       approvalModal.style.display = "flex";
+      // Prevent body scroll when modal is open
       document.body.style.overflow = "hidden";
     }
   }
@@ -346,7 +350,6 @@ document.addEventListener("DOMContentLoaded", () => {
       populateSelect(itmdescFilter, items, "All Items");
     }
   }
-
   function populateStaticSelect(selectElement, options) {
     if (!selectElement) return;
     selectElement.innerHTML = "";
@@ -362,7 +365,6 @@ document.addEventListener("DOMContentLoaded", () => {
       selectElement.appendChild(option);
     }
   }
-
   function populateSelect(selectElement, values, defaultOptionText) {
     if (!selectElement) return;
     const currentVal = selectElement.value;
@@ -379,7 +381,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     selectElement.value = [...selectElement.options].some(opt => opt.value === currentVal) ? currentVal : "ALL";
   }
-
   function applyFilters() {
     if (!marketIdFilter) return;
     const marketQuery = marketIdFilter.value;
@@ -407,7 +408,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateTableByPage();
   }
 
-  // 14) Table rendering functions
+  // 14) Table rendering functions (UPDATED WITH COMMENTS)
   function renderTableHeaders() {
     if (!tableHead) return;
     tableHead.innerHTML = "";
@@ -530,15 +531,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!rec) return;
             const val = parseFloat(input.value);
             rec._neededQty = isNaN(val) ? 0 : val;
-            
-            // FIXED: Find Total Cost cell in current row only
-            const currentRow = input.closest('tr');
-            const totalCostCell = currentRow.querySelector('td.total-cost');
-            
-            if (totalCostCell) {
+            const tc = document.querySelector(`td.total-cost[data-key="${rowKey}"]`);
+            if (tc) {
               const cst = parseFloat(rec.cost) || 0;
               const qty = rec._neededQty !== undefined ? rec._neededQty : 0;
-              totalCostCell.textContent = (qty * cst).toFixed(2);
+              tc.textContent = (qty * cst).toFixed(2);
             }
           });
           td.appendChild(input);
@@ -567,7 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 15) Modal approval flow
+  // 15) Modal approval flow (UPDATED WITH PROPER MODAL HANDLING)
   function openSendModal(items) {
     if (!items || items.length === 0) {
       alert("Please select at least one item to send.");
@@ -576,7 +573,7 @@ document.addEventListener("DOMContentLoaded", () => {
     dataToSend = items;
     if (modalItemCount) modalItemCount.textContent = items.length;
     if (modalApproverSelect) modalApproverSelect.value = "";
-    openModal();
+    openModal(); // Use the proper modal open function
   }
 
   function handleBulkSend() {
@@ -610,6 +607,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const shipping = sel ? sel.value : item["Recommended Shipping"] || "No order needed";
       const totalCost = (neededQty * itemCost).toFixed(2);
       
+      // Get the comment for this item
       const comments = item._comment || "";
       
       try {
@@ -627,7 +625,7 @@ document.addEventListener("DOMContentLoaded", () => {
             Total_Cost: totalCost,
             Recommended_Shipping: shipping,
             Approved_By: approver,
-            Comments: comments
+            Comments: comments // Send comments to backend
           }),
         });
       } catch (error) {
@@ -637,7 +635,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     alert(`${dataToSend.length} item(s) sent for approval successfully!`);
-    closeModal();
+    closeModal(); // Use proper modal close function
     dataToSend = [];
     if (tableBody) {
       tableBody.querySelectorAll("input.row-checkbox:checked").forEach(cb => (cb.checked = false));
@@ -655,7 +653,7 @@ document.addEventListener("DOMContentLoaded", () => {
       : "No data to display";
   }
 
-  // 17) Export to Excel
+  // 17) Export to Excel (UPDATED WITH COMMENTS)
   function exportToExcel() {
     if (!currentFilteredData || currentFilteredData.length === 0) {
       alert("No data to export.");
