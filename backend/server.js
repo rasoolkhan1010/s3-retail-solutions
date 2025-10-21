@@ -295,3 +295,4 @@ app.get("/", (req, res) => res.send("OK - server up"));
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
+console.log("hi")
