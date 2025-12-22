@@ -96,11 +96,21 @@ document.addEventListener("DOMContentLoaded", () => {
     "Original Recommended Qty", "Order Qty", "Total Cost",
     "Recommended Shipping", "Approved By", "Approved At", "Comments"
   ];
-  const dataKeys = [
-    "marketid", "company", "itmdesc", "cost", "total_stock",
-    "original_recommended_qty", "order_qty", "total_cost",
-    "recommended_shipping", "approved_by", "approved_at", "comments"
-  ];
+// UPDATED KEYS TO MATCH DATABASE SCREENSHOT
+const dataKeys = [
+  "marketid", 
+  "company", 
+  "itmdesc", 
+  "cost", 
+  "Total_Stock",           // Changed from total_stock
+  "Original_Recomr",        // Changed from original_recommended_qty
+  "Order_Qty",              // Changed from order_qty
+  "Total_Cost",             // Changed from total_cost
+  "Recommended_",           // Changed from recommended_shipping
+  "Approved_By",            // Changed from approved_by
+  "approved_at", 
+  "comments"
+];
 
   function renderTableHeaders() {
     if (!tableHead) return;
@@ -335,3 +345,4 @@ document.addEventListener("DOMContentLoaded", () => {
     exportBtn.addEventListener("click", exportToExcel);
   }
 });
+
